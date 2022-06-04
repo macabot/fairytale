@@ -1,5 +1,49 @@
 @import "https://unpkg.com/water.css@2/out/light.min.css";
 
+html, body, main {
+    height: 100%;
+}
+
+body {
+    max-width: 100%;
+}
+
+main {
+    display: grid;
+    grid-template-areas:
+        'tree opts opts opts opts opts'
+        'tree app app app app app'
+        'tree app app app app app'
+        'tree app app app app app'
+        'tree app app app app app'
+        'tree app app app app app'
+        'tree app app app app app'
+        'tree ctrl ctrl ctrl ctrl ctrl'
+        'tree ctrl ctrl ctrl ctrl ctrl';
+    gap: 10px;
+}
+
+.tree-view {
+    grid-area: tree;
+}
+
+.settings {
+    grid-area: opts;
+}
+
+.current-tale {
+    grid-area: app;
+}
+
+iframe {
+    width: 100%;
+    height: 100%;
+}
+
+.controls {
+    grid-area: ctrl;
+}
+
 /* Based on https://www.w3schools.com/howto/howto_js_treeview.asp */
 ul, .tree-root {
     list-style-type: none;

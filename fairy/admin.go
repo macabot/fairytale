@@ -13,8 +13,52 @@ import (
 
 type AdminState struct {
 	hypp.EmptyState
-	Tree    Node
-	Current []int
+	Tree     Node
+	Current  []int
+	Settings AdminSettings
+}
+
+type IFrameSize [2]int
+
+var (
+	SizeDesktop        = IFrameSize{0, 0}
+	Size_iPhone_11_Pro = IFrameSize{375, 812}
+)
+
+var IFrameSizes = [...]IFrameSize{
+	SizeDesktop,
+	Size_iPhone_11_Pro,
+}
+
+func (i IFrameSize) Equal(other IFrameSize) bool {
+	return i[0] == other[0] && i[1] == other[1]
+}
+
+func (i IFrameSize) String() string {
+	switch i {
+	case SizeDesktop:
+		return "Desktop"
+	case Size_iPhone_11_Pro:
+		return "iPhone 11 Pro"
+	default:
+		panic(fmt.Errorf("unknown IFrameSize: %v", i))
+	}
+}
+
+func IFrameSizeFromString(s string) IFrameSize {
+	switch s {
+	case "Desktop":
+		return SizeDesktop
+	case "iPhone 11 Pro":
+		return Size_iPhone_11_Pro
+	default:
+		panic(fmt.Errorf("cannot convert '%s' to IFrameSize", s))
+	}
+}
+
+type AdminSettings struct {
+	iFrameSize IFrameSize
+	landscape  bool
 }
 
 func (s AdminState) getTale(path []int) *Tale {
@@ -163,25 +207,75 @@ func renderTreeView(tree Node) *hypp.VNode {
 	)
 }
 
-func renderIFrame() *hypp.VNode {
+func renderSettings(settings AdminSettings) *hypp.VNode {
+	return html.Div(
+		hypp.HProps{"class": "settings"},
+		renderIFrameWidth(settings.iFrameSize),
+	)
+}
+
+func renderIFrameSize(size IFrameSize, selected bool) *hypp.VNode {
+	return html.Option(
+		hypp.HProps{
+			"value":    size.String(),
+			"selected": selected,
+		},
+		hypp.Text(size.String()),
+	)
+}
+
+func selectIFrameSize(state *AdminState, payload hypp.Payload) hypp.Dispatchable {
+	event := payload.(hypp.Event)
+	value := event.Target().Value()
+	size := IFrameSizeFromString(value)
+
+	newState := state.clone()
+	newState.Settings.iFrameSize = size
+	return newState
+}
+
+func renderIFrameWidth(size IFrameSize) *hypp.VNode {
+	options := make([]*hypp.VNode, len(IFrameSizes))
+	for i, s := range IFrameSizes {
+		options[i] = renderIFrameSize(s, s.Equal(size))
+	}
+	return html.Label(
+		nil,
+		html.Select(
+			hypp.HProps{
+				"onchange": hypp.Action[*AdminState](selectIFrameSize),
+			},
+			options...,
+		),
+	)
+}
+
+func renderIFrame(size IFrameSize) *hypp.VNode {
+	iFrameProps := hypp.HProps{
+		"src": "/",
+	}
+	if size[0] != 0 && size[1] != 0 {
+		iFrameProps["style"] = map[string]string{
+			"width":  fmt.Sprintf("%dpx", size[0]),
+			"height": fmt.Sprintf("%dpx", size[1]),
+		}
+	}
 	return html.Div(
 		hypp.HProps{"class": "current-tale"},
-		html.Iframe(
-			hypp.HProps{
-				"src": "/",
-			},
-		),
+		html.Iframe(iFrameProps),
 	)
 }
 
 func renderControls(state *AdminState) *hypp.VNode {
 	tale := state.CurrentTale()
+	var controls []*hypp.VNode
 	if tale == nil {
-		return hypp.Text("No controls: no tale has been selected")
-	}
-	controls := make([]*hypp.VNode, len(tale.controls))
-	for i, control := range tale.controls {
-		controls[i] = control.Render(tale.state, state.Current, i)
+		controls = []*hypp.VNode{hypp.Text("No controls: no tale has been selected")}
+	} else {
+		controls = make([]*hypp.VNode, len(tale.controls))
+		for i, control := range tale.controls {
+			controls[i] = control.Render(tale.state, state.Current, i)
+		}
 	}
 	return html.Div(
 		hypp.HProps{"class": "controls"},
@@ -201,7 +295,8 @@ func RunAdmin(state *AdminState) {
 			return html.Main(
 				nil,
 				renderTreeView(state.Tree),
-				renderIFrame(),
+				renderSettings(state.Settings),
+				renderIFrame(state.Settings.iFrameSize),
 				renderControls(state),
 			)
 		},
