@@ -24,8 +24,9 @@ main {
 }
 
 .settings {
-    height: 10%;
+    height: 5%;
     background-color: #FAD3BB;
+    display: flex;
 }
 
 .current-tale {

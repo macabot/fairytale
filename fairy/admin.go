@@ -30,6 +30,10 @@ var IFrameSizes = [...]IFrameSize{
 	Size_iPhone_11_Pro,
 }
 
+func (i *IFrameSize) Swap() {
+	i[0], i[1] = i[1], i[0]
+}
+
 func (i IFrameSize) Equal(other IFrameSize) bool {
 	return i[0] == other[0] && i[1] == other[1]
 }
@@ -211,7 +215,7 @@ func renderRightSide(state *AdminState) *hypp.VNode {
 	return html.Div(
 		hypp.HProps{"class": "right-side"},
 		renderSettings(state.Settings),
-		renderIFrame(state.Settings.iFrameSize),
+		renderIFrame(state.Settings),
 		renderControls(state),
 	)
 }
@@ -219,7 +223,8 @@ func renderRightSide(state *AdminState) *hypp.VNode {
 func renderSettings(settings AdminSettings) *hypp.VNode {
 	return html.Div(
 		hypp.HProps{"class": "settings"},
-		renderIFrameWidth(settings.iFrameSize),
+		renderIFrameSizeSelect(settings.iFrameSize),
+		renderLandscapeToggle(settings.landscape),
 	)
 }
 
@@ -243,23 +248,52 @@ func selectIFrameSize(state *AdminState, payload hypp.Payload) hypp.Dispatchable
 	return newState
 }
 
-func renderIFrameWidth(size IFrameSize) *hypp.VNode {
+func renderIFrameSizeSelect(size IFrameSize) *hypp.VNode {
 	options := make([]*hypp.VNode, len(IFrameSizes))
 	for i, s := range IFrameSizes {
 		options[i] = renderIFrameSize(s, s.Equal(size))
 	}
-	return html.Label(
-		nil,
-		html.Select(
+	return html.Select(
+		hypp.HProps{
+			"onchange": hypp.Action[*AdminState](selectIFrameSize),
+		},
+		options...,
+	)
+}
+
+func toggleLandscape(state *AdminState, _ hypp.Payload) hypp.Dispatchable {
+	newState := state.clone()
+	newState.Settings.landscape = !newState.Settings.landscape
+	return newState
+}
+
+func renderLandscapeToggle(landscape bool) *hypp.VNode {
+	return html.Select(
+		hypp.HProps{
+			"onchange": hypp.Action[*AdminState](toggleLandscape),
+		},
+		html.Option(
 			hypp.HProps{
-				"onchange": hypp.Action[*AdminState](selectIFrameSize),
+				"value":    "0",
+				"selected": !landscape,
 			},
-			options...,
+			hypp.Text("Portrait"),
+		),
+		html.Option(
+			hypp.HProps{
+				"value":    "1",
+				"selected": landscape,
+			},
+			hypp.Text("Landscape"),
 		),
 	)
 }
 
-func renderIFrame(size IFrameSize) *hypp.VNode {
+func renderIFrame(settings AdminSettings) *hypp.VNode {
+	size := settings.iFrameSize
+	if settings.landscape {
+		size.Swap()
+	}
 	divProps := hypp.HProps{"class": "current-tale"}
 	iFrameProps := hypp.HProps{
 		"src": "/",
