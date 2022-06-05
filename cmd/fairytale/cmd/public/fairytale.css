@@ -9,39 +9,42 @@ body {
 }
 
 main {
-    display: grid;
-    grid-template-areas:
-        'tree opts opts opts opts opts'
-        'tree app app app app app'
-        'tree app app app app app'
-        'tree app app app app app'
-        'tree app app app app app'
-        'tree app app app app app'
-        'tree app app app app app'
-        'tree ctrl ctrl ctrl ctrl ctrl'
-        'tree ctrl ctrl ctrl ctrl ctrl';
-    gap: 10px;
+    display: flex;
 }
 
+/* Colors taken from https://www.schemecolor.com/dreamt-of-a-fairy-tale-color-scheme.php */
+
 .tree-view {
-    grid-area: tree;
+    width: 15%;
+    background-color: #C62C71;
+}
+
+.right-side {
+    width: 100%;
 }
 
 .settings {
-    grid-area: opts;
+    height: 10%;
+    background-color: #FAD3BB;
 }
 
 .current-tale {
-    grid-area: app;
+    height: 60%;
+    background-color: #F8ECE8;
+    display: flex;
+    justify-content: center;
 }
 
 iframe {
     width: 100%;
     height: 100%;
+    background-color: white;
+    border: none;
 }
 
 .controls {
-    grid-area: ctrl;
+    height: 30%;
+    background-color: #EDC478;
 }
 
 /* Based on https://www.w3schools.com/howto/howto_js_treeview.asp */

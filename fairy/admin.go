@@ -207,6 +207,15 @@ func renderTreeView(tree Node) *hypp.VNode {
 	)
 }
 
+func renderRightSide(state *AdminState) *hypp.VNode {
+	return html.Div(
+		hypp.HProps{"class": "right-side"},
+		renderSettings(state.Settings),
+		renderIFrame(state.Settings.iFrameSize),
+		renderControls(state),
+	)
+}
+
 func renderSettings(settings AdminSettings) *hypp.VNode {
 	return html.Div(
 		hypp.HProps{"class": "settings"},
@@ -251,17 +260,21 @@ func renderIFrameWidth(size IFrameSize) *hypp.VNode {
 }
 
 func renderIFrame(size IFrameSize) *hypp.VNode {
+	divProps := hypp.HProps{"class": "current-tale"}
 	iFrameProps := hypp.HProps{
 		"src": "/",
 	}
 	if size[0] != 0 && size[1] != 0 {
+		divProps["style"] = map[string]string{
+			"min-height": fmt.Sprintf("%dpx", size[1]),
+		}
 		iFrameProps["style"] = map[string]string{
 			"width":  fmt.Sprintf("%dpx", size[0]),
 			"height": fmt.Sprintf("%dpx", size[1]),
 		}
 	}
 	return html.Div(
-		hypp.HProps{"class": "current-tale"},
+		divProps,
 		html.Iframe(iFrameProps),
 	)
 }
@@ -295,9 +308,7 @@ func RunAdmin(state *AdminState) {
 			return html.Main(
 				nil,
 				renderTreeView(state.Tree),
-				renderSettings(state.Settings),
-				renderIFrame(state.Settings.iFrameSize),
-				renderControls(state),
+				renderRightSide(state),
 			)
 		},
 		Node: jsd.Node(el),
