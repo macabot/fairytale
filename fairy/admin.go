@@ -41,7 +41,7 @@ func (i IFrameSize) String() string {
 	case Size_iPhone_11_Pro:
 		return "iPhone 11 Pro"
 	default:
-		panic(fmt.Errorf("unknown IFrameSize: %v", i))
+		panic(fmt.Errorf("unknown IFrameSize: %d, %d", i[0], i[1]))
 	}
 }
 
@@ -69,7 +69,7 @@ func (s AdminState) getTale(path []int) *Tale {
 	return node.Tale()
 }
 
-func (s AdminState) CurrentTale() *Tale {
+func (s AdminState) currentTale() *Tale {
 	return s.getTale(s.Current)
 }
 
@@ -280,7 +280,7 @@ func renderIFrame(size IFrameSize) *hypp.VNode {
 }
 
 func renderControls(state *AdminState) *hypp.VNode {
-	tale := state.CurrentTale()
+	tale := state.currentTale()
 	var controls []*hypp.VNode
 	if tale == nil {
 		controls = []*hypp.VNode{hypp.Text("No controls: no tale has been selected")}
