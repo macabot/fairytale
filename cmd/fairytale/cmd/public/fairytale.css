@@ -66,6 +66,15 @@ ul, .tree-root {
     user-select: none;
 }
 
+.tree-tale {
+    cursor: pointer;
+    user-select: none;
+}
+
+.tree-tale.selected {
+    background-color: #ED921D;
+}
+
 .caret::before {
     content: "\25B6";
     color: black;

@@ -152,13 +152,13 @@ func pathToKey(p []int) string {
 	return k
 }
 
-func renderNode(n Node, isRoot bool, path []int) *hypp.VNode {
+func renderNode(n Node, isRoot bool, path []int, current []int) *hypp.VNode {
 	children := make([]*hypp.VNode, len(n.Children()))
 	for i, child := range n.Children() {
 		childPath := make([]int, len(path)+1)
 		copy(childPath, path)
 		childPath[len(childPath)-1] = i
-		children[i] = renderNode(child, false, childPath)
+		children[i] = renderNode(child, false, childPath, current)
 	}
 	ul := html.Ul(
 		hypp.HProps{
@@ -171,13 +171,15 @@ func renderNode(n Node, isRoot bool, path []int) *hypp.VNode {
 		},
 		children...,
 	)
+	selected := equalPaths(path, current)
 	if isRoot {
 		return ul
 	} else if len(children) == 0 {
 		return html.Li(
 			hypp.HProps{
 				"class": map[string]bool{
-					"selected": n.IsSelected(),
+					"tree-tale": true,
+					"selected":  selected,
 				},
 				"onclick": selectTaleByPath(path),
 			},
@@ -187,7 +189,7 @@ func renderNode(n Node, isRoot bool, path []int) *hypp.VNode {
 	return html.Li(
 		hypp.HProps{
 			"class": map[string]bool{
-				"selected": n.IsSelected(),
+				"selected": selected,
 			},
 		},
 		html.Span(
@@ -204,10 +206,10 @@ func renderNode(n Node, isRoot bool, path []int) *hypp.VNode {
 	)
 }
 
-func renderTreeView(tree Node) *hypp.VNode {
+func renderTreeView(tree Node, current []int) *hypp.VNode {
 	return html.Div(
 		hypp.HProps{"class": "tree-view"},
-		renderNode(tree, true, nil),
+		renderNode(tree, true, nil, current),
 	)
 }
 
@@ -341,7 +343,7 @@ func RunAdmin(state *AdminState) {
 		View: func(state *AdminState) *hypp.VNode {
 			return html.Main(
 				nil,
-				renderTreeView(state.Tree),
+				renderTreeView(state.Tree, state.Current),
 				renderRightSide(state),
 			)
 		},
