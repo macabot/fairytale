@@ -25,6 +25,7 @@ main {
 
 .settings {
     height: 5%;
+    min-height: 3rem;
     background-color: #FAD3BB;
     display: flex;
 }
