@@ -3,7 +3,9 @@ package fairy
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"strconv"
+	"strings"
 	"syscall/js"
 
 	"github.com/macabot/hypp"
@@ -16,6 +18,47 @@ type AdminState struct {
 	Tree     Node
 	Current  []int
 	Settings AdminSettings
+}
+
+func (s *AdminState) updateFromQuery(query url.Values) {
+	fmt.Println("has path", query.Has("path"))
+	if query.Has("path") {
+		var path []int
+		if err := json.Unmarshal([]byte(query.Get("path")), &path); err != nil {
+			consoleWarn("Could not parse query param 'path'.")
+		} else {
+			fmt.Println("set path", path)
+			s.Current = path
+		}
+	}
+	if query.Has("iFrameSize") {
+		if size, err := iFrameSizeFromSlug(query.Get("iFrameSize")); err != nil {
+			consoleWarn("Could not parse query param 'iFrameSize'.")
+		} else {
+			s.Settings.iFrameSize = size
+		}
+	}
+	if query.Has("landscape") {
+		if landscape, err := strconv.ParseBool(query.Get("landscape")); err != nil {
+			consoleWarn("Could not parse query param 'landscape'.")
+		} else {
+			s.Settings.landscape = landscape
+		}
+	}
+}
+
+func (s AdminState) toQuery() url.Values {
+	query := url.Values{}
+	if s.Current != nil {
+		b, err := json.Marshal(s.Current)
+		if err != nil {
+			panic("Could not JSON marshal AdminState.Current")
+		}
+		query.Set("path", string(b))
+	}
+	query.Set("iFrameSize", s.Settings.iFrameSize.Slug())
+	query.Set("landscape", strconv.FormatBool(s.Settings.landscape))
+	return query
 }
 
 type IFrameSize [2]int
@@ -49,14 +92,30 @@ func (i IFrameSize) String() string {
 	}
 }
 
-func IFrameSizeFromString(s string) IFrameSize {
+func (i IFrameSize) Slug() string {
+	return strings.ReplaceAll(i.String(), " ", "-")
+}
+
+func iFrameSizeFromSlug(s string) (IFrameSize, error) {
+	return iFrameSizeFromString(strings.ReplaceAll(s, "-", " "))
+}
+
+func mustIFrameSizeFromString(s string) IFrameSize {
+	size, err := iFrameSizeFromString(s)
+	if err != nil {
+		panic(err)
+	}
+	return size
+}
+
+func iFrameSizeFromString(s string) (IFrameSize, error) {
 	switch s {
 	case "Desktop":
-		return SizeDesktop
+		return SizeDesktop, nil
 	case "iPhone 11 Pro":
-		return Size_iPhone_11_Pro
+		return Size_iPhone_11_Pro, nil
 	default:
-		panic(fmt.Errorf("cannot convert '%s' to IFrameSize", s))
+		return [2]int{}, fmt.Errorf("cannot convert '%s' to IFrameSize", s)
 	}
 }
 
@@ -81,18 +140,29 @@ func (s AdminState) clone() *AdminState {
 	return &s
 }
 
-func postMessage[T any](message Message[T]) hypp.Effect {
+func postMessage[T any](message Message[T]) {
 	origin := js.Global().Get("window").Get("location").Get("origin")
-	return hypp.Effect{
-		Effecter: func(_ hypp.Dispatch, _ hypp.Payload) {
-			iframeEl := js.Global().Get("document").Call("querySelector", "iframe")
-			b, err := json.Marshal(message)
-			if err != nil {
-				panic(fmt.Errorf("fairy: cannot JSON marshal message with type '%d': %w", message.Type, err))
-			}
-			iframeEl.Get("contentWindow").Call("postMessage", string(b), origin)
-		},
+	iframeEl := js.Global().Get("document").Call("querySelector", "iframe")
+	b, err := json.Marshal(message)
+	if err != nil {
+		panic(fmt.Errorf("fairy: cannot JSON marshal message with type '%d': %w", message.Type, err))
 	}
+	iframeEl.Get("contentWindow").Call("postMessage", string(b), origin)
+}
+
+func consoleDebug(args ...any) {
+	js.Global().Get("console").Call("debug", args...)
+}
+
+func consoleWarn(args ...any) {
+	js.Global().Get("console").Call("warn", args...)
+}
+
+func historyPushState(state *AdminState) {
+	href := getHref()
+	href.RawQuery = state.toQuery().Encode()
+	fmt.Println(">>", href.String())
+	js.Global().Get("history").Call("pushState", map[string]any{}, "", href.String())
 }
 
 func equalPaths(a, b []int) bool {
@@ -114,15 +184,11 @@ func selectTaleByPath(path []int) hypp.Action[*AdminState] {
 		}
 		newState := state.clone()
 		newState.Current = path
-		return hypp.StateAndEffects[*AdminState]{
-			State: newState,
-			Effects: []hypp.Effect{
-				postMessage(Message[[]int]{
-					Type: MessageSelectTale,
-					Data: path,
-				}),
-			},
-		}
+		postMessage(Message[[]int]{
+			Type: MessageSelectTale,
+			Data: path,
+		})
+		return newState
 	}
 }
 
@@ -243,7 +309,7 @@ func renderIFrameSize(size IFrameSize, selected bool) *hypp.VNode {
 func selectIFrameSize(state *AdminState, payload hypp.Payload) hypp.Dispatchable {
 	event := payload.(hypp.Event)
 	value := event.Target().Value()
-	size := IFrameSizeFromString(value)
+	size := mustIFrameSizeFromString(value)
 
 	newState := state.clone()
 	newState.Settings.iFrameSize = size
@@ -332,11 +398,21 @@ func renderControls(state *AdminState) *hypp.VNode {
 	)
 }
 
+func getHref() *url.URL {
+	href, err := url.Parse(js.Global().Get("location").Get("href").String())
+	if err != nil {
+		panic("Could not parse window.location.href as URL.")
+	}
+	return href
+}
+
 func RunAdmin(state *AdminState) {
 	el := js.Global().Get("document").Call("getElementById", "app")
 	if el.IsNull() {
 		panic("Could not find element with id 'app'.")
 	}
+	href := getHref()
+	state.updateFromQuery(href.Query())
 	hypp.App(hypp.AppProps[*AdminState]{
 		Driver: jsd.Driver{},
 		Init:   state,
@@ -346,6 +422,17 @@ func RunAdmin(state *AdminState) {
 				renderTreeView(state.Tree, state.Current),
 				renderRightSide(state),
 			)
+		},
+		DispatchInitializer: func(dispatch hypp.Dispatch) hypp.Dispatch {
+			return func(dispatchable hypp.Dispatchable, payload hypp.Payload) {
+				switch v := dispatchable.(type) {
+				case hypp.StateAndEffects[*AdminState]:
+					historyPushState(v.State)
+				case *AdminState:
+					historyPushState(v)
+				}
+				dispatch(dispatchable, payload)
+			}
 		},
 		Node: jsd.Node(el),
 	})

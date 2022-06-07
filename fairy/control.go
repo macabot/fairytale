@@ -21,19 +21,15 @@ func onChangeControl[T any](
 		eventData := getEventData(event)
 		// TODO pass eventData instead of event to Update method?
 		tale.state = control.UpdateFromEvent(tale.state, event)
-		return hypp.StateAndEffects[*AdminState]{
-			State: newState,
-			Effects: []hypp.Effect{
-				postMessage(Message[OperateControlData[T]]{
-					Type: MessageOperateControl,
-					Data: OperateControlData[T]{
-						TalePath:     talePath,
-						ControlIndex: controlIndex,
-						EventData:    eventData,
-					},
-				}),
+		postMessage(Message[OperateControlData[T]]{
+			Type: MessageOperateControl,
+			Data: OperateControlData[T]{
+				TalePath:     talePath,
+				ControlIndex: controlIndex,
+				EventData:    eventData,
 			},
-		}
+		})
+		return newState
 	}
 }
 
