@@ -12,25 +12,6 @@ import (
 
 var window hypp.Window = jsd.Driver{}.Window()
 
-type AppState struct {
-	hypp.EmptyState
-	Tree    Node
-	Current []int
-	Assets  []*hypp.VNode
-}
-
-func (s AppState) getTale(path []int) *Tale {
-	node := s.Tree
-	for _, i := range path {
-		node = node.Children()[i]
-	}
-	return node.Tale()
-}
-
-func (s AppState) clone() *AppState {
-	return &s
-}
-
 func renderCurrentTale(tale *Tale) *hypp.VNode {
 	var content *hypp.VNode
 	if tale == nil {
@@ -41,7 +22,7 @@ func renderCurrentTale(tale *Tale) *hypp.VNode {
 	return content
 }
 
-func selectTale(state *AppState, payload hypp.Payload) hypp.Dispatchable {
+func selectTale(state *State, payload hypp.Payload) hypp.Dispatchable {
 	raw := payload.(json.RawMessage)
 	var path []int
 	if err := json.Unmarshal(raw, &path); err != nil {
@@ -55,7 +36,7 @@ func selectTale(state *AppState, payload hypp.Payload) hypp.Dispatchable {
 	return newState
 }
 
-func operateControl(state *AppState, payload hypp.Payload) hypp.Dispatchable {
+func operateControl(state *State, payload hypp.Payload) hypp.Dispatchable {
 	raw := payload.(json.RawMessage)
 	var data OperateControlData[json.RawMessage]
 	if err := json.Unmarshal(raw, &data); err != nil {
@@ -110,15 +91,15 @@ func onOperateControl(dispatchable hypp.Dispatchable) hypp.Subscription {
 	}
 }
 
-func RunApp(state *AppState) {
+func runApp(state *State) {
 	el := js.Global().Get("document").Call("querySelector", "html")
 	if el.IsNull() {
 		panic("Could not find <html> element.")
 	}
-	hypp.App(hypp.AppProps[*AppState]{
+	hypp.App(hypp.AppProps[*State]{
 		Driver: jsd.Driver{},
 		Init:   state,
-		View: func(state *AppState) *hypp.VNode {
+		View: func(state *State) *hypp.VNode {
 			var assets []*hypp.VNode
 			currentTale := state.getTale(state.Current)
 			if currentTale != nil {
@@ -145,10 +126,10 @@ func RunApp(state *AppState) {
 			)
 		},
 		Node: jsd.Node(el),
-		Subscriptions: func(state *AppState) []hypp.Subscription {
+		Subscriptions: func(state *State) []hypp.Subscription {
 			return []hypp.Subscription{
-				onSelectTale(hypp.Action[*AppState](selectTale)),
-				onOperateControl(hypp.Action[*AppState](operateControl)),
+				onSelectTale(hypp.Action[*State](selectTale)),
+				onOperateControl(hypp.Action[*State](operateControl)),
 			}
 		},
 	})

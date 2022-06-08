@@ -5,143 +5,12 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
-	"strings"
 	"syscall/js"
 
 	"github.com/macabot/hypp"
 	jsd "github.com/macabot/hypp/driver/js"
 	"github.com/macabot/hypp/tag/html"
 )
-
-type AdminState struct {
-	hypp.EmptyState
-	Tree     Node
-	Current  []int
-	Settings AdminSettings
-}
-
-func (s *AdminState) updateFromQuery(query url.Values) {
-	if query.Has("path") {
-		var path []int
-		if err := json.Unmarshal([]byte(query.Get("path")), &path); err != nil {
-			consoleWarn("Could not parse query param 'path'.")
-		} else {
-			s.Current = path
-			node := s.Tree
-			for _, i := range path {
-				node = node.Children()[i]
-				node.SetIsOpen(true)
-			}
-		}
-	}
-	if query.Has("iFrameSize") {
-		if size, err := iFrameSizeFromSlug(query.Get("iFrameSize")); err != nil {
-			consoleWarn("Could not parse query param 'iFrameSize'.")
-		} else {
-			s.Settings.iFrameSize = size
-		}
-	}
-	if query.Has("landscape") {
-		if landscape, err := strconv.ParseBool(query.Get("landscape")); err != nil {
-			consoleWarn("Could not parse query param 'landscape'.")
-		} else {
-			s.Settings.landscape = landscape
-		}
-	}
-}
-
-func (s AdminState) toQuery() url.Values {
-	query := url.Values{}
-	if s.Current != nil {
-		b, err := json.Marshal(s.Current)
-		if err != nil {
-			panic("Could not JSON marshal AdminState.Current")
-		}
-		query.Set("path", string(b))
-	}
-	query.Set("iFrameSize", s.Settings.iFrameSize.Slug())
-	query.Set("landscape", strconv.FormatBool(s.Settings.landscape))
-	return query
-}
-
-type IFrameSize [2]int
-
-var (
-	SizeDesktop        = IFrameSize{0, 0}
-	Size_iPhone_11_Pro = IFrameSize{375, 812}
-)
-
-var IFrameSizes = [...]IFrameSize{
-	SizeDesktop,
-	Size_iPhone_11_Pro,
-}
-
-func (i *IFrameSize) Swap() {
-	i[0], i[1] = i[1], i[0]
-}
-
-func (i IFrameSize) Equal(other IFrameSize) bool {
-	return i[0] == other[0] && i[1] == other[1]
-}
-
-func (i IFrameSize) String() string {
-	switch i {
-	case SizeDesktop:
-		return "Desktop"
-	case Size_iPhone_11_Pro:
-		return "iPhone 11 Pro"
-	default:
-		panic(fmt.Errorf("unknown IFrameSize: %d, %d", i[0], i[1]))
-	}
-}
-
-func (i IFrameSize) Slug() string {
-	return strings.ReplaceAll(i.String(), " ", "-")
-}
-
-func iFrameSizeFromSlug(s string) (IFrameSize, error) {
-	return iFrameSizeFromString(strings.ReplaceAll(s, "-", " "))
-}
-
-func mustIFrameSizeFromString(s string) IFrameSize {
-	size, err := iFrameSizeFromString(s)
-	if err != nil {
-		panic(err)
-	}
-	return size
-}
-
-func iFrameSizeFromString(s string) (IFrameSize, error) {
-	switch s {
-	case "Desktop":
-		return SizeDesktop, nil
-	case "iPhone 11 Pro":
-		return Size_iPhone_11_Pro, nil
-	default:
-		return [2]int{}, fmt.Errorf("cannot convert '%s' to IFrameSize", s)
-	}
-}
-
-type AdminSettings struct {
-	iFrameSize IFrameSize
-	landscape  bool
-}
-
-func (s AdminState) getTale(path []int) *Tale {
-	node := s.Tree
-	for _, i := range path {
-		node = node.Children()[i]
-	}
-	return node.Tale()
-}
-
-func (s AdminState) currentTale() *Tale {
-	return s.getTale(s.Current)
-}
-
-func (s AdminState) clone() *AdminState {
-	return &s
-}
 
 func postMessage[T any](message Message[T]) {
 	origin := js.Global().Get("window").Get("location").Get("origin")
@@ -161,9 +30,37 @@ func consoleWarn(args ...any) {
 	js.Global().Get("console").Call("warn", args...)
 }
 
-func historyPushState(state *AdminState) {
-	href := getHref()
-	href.RawQuery = state.toQuery().Encode()
+func equalQuery(a, b url.Values) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	equalValues := func(u, v []string) bool {
+		if len(u) != len(v) {
+			return false
+		}
+		for i, x := range u {
+			if x != v[i] {
+				return false
+			}
+		}
+		return true
+	}
+	for key, valuesA := range a {
+		valuesB := b[key]
+		if !equalValues(valuesA, valuesB) {
+			return false
+		}
+	}
+	return true
+}
+
+func historyPushState(state *State) {
+	href := getHref(js.Global())
+	stateQuery := state.toQuery()
+	if equalQuery(href.Query(), stateQuery) {
+		return
+	}
+	href.RawQuery = stateQuery.Encode()
 	js.Global().Get("history").Call("pushState", map[string]any{}, "", href.String())
 }
 
@@ -179,8 +76,8 @@ func equalPaths(a, b []int) bool {
 	return true
 }
 
-func selectTaleByPath(path []int) hypp.Action[*AdminState] {
-	return func(state *AdminState, _ hypp.Payload) hypp.Dispatchable {
+func selectTaleByPath(path []int) hypp.Action[*State] {
+	return func(state *State, _ hypp.Payload) hypp.Dispatchable {
 		if equalPaths(state.Current, path) {
 			return state
 		}
@@ -194,8 +91,8 @@ func selectTaleByPath(path []int) hypp.Action[*AdminState] {
 	}
 }
 
-func toggleNode(path []int) hypp.Action[*AdminState] {
-	return func(state *AdminState, _ hypp.Payload) hypp.Dispatchable {
+func toggleNode(path []int) hypp.Action[*State] {
+	return func(state *State, _ hypp.Payload) hypp.Dispatchable {
 		newState := state.clone()
 		node := state.Tree
 		for _, i := range path {
@@ -281,7 +178,7 @@ func renderTreeView(tree Node, current []int) *hypp.VNode {
 	)
 }
 
-func renderRightSide(state *AdminState) *hypp.VNode {
+func renderRightSide(state *State) *hypp.VNode {
 	return html.Div(
 		hypp.HProps{"class": "right-side"},
 		renderSettings(state.Settings),
@@ -308,7 +205,7 @@ func renderIFrameSize(size IFrameSize, selected bool) *hypp.VNode {
 	)
 }
 
-func selectIFrameSize(state *AdminState, payload hypp.Payload) hypp.Dispatchable {
+func selectIFrameSize(state *State, payload hypp.Payload) hypp.Dispatchable {
 	event := payload.(hypp.Event)
 	value := event.Target().Value()
 	size := mustIFrameSizeFromString(value)
@@ -325,13 +222,13 @@ func renderIFrameSizeSelect(size IFrameSize) *hypp.VNode {
 	}
 	return html.Select(
 		hypp.HProps{
-			"onchange": hypp.Action[*AdminState](selectIFrameSize),
+			"onchange": hypp.Action[*State](selectIFrameSize),
 		},
 		options...,
 	)
 }
 
-func toggleLandscape(state *AdminState, _ hypp.Payload) hypp.Dispatchable {
+func toggleLandscape(state *State, _ hypp.Payload) hypp.Dispatchable {
 	newState := state.clone()
 	newState.Settings.landscape = !newState.Settings.landscape
 	return newState
@@ -340,7 +237,7 @@ func toggleLandscape(state *AdminState, _ hypp.Payload) hypp.Dispatchable {
 func renderLandscapeToggle(landscape bool) *hypp.VNode {
 	return html.Select(
 		hypp.HProps{
-			"onchange": hypp.Action[*AdminState](toggleLandscape),
+			"onchange": hypp.Action[*State](toggleLandscape),
 		},
 		html.Option(
 			hypp.HProps{
@@ -383,7 +280,7 @@ func renderIFrame(settings AdminSettings) *hypp.VNode {
 	)
 }
 
-func renderControls(state *AdminState) *hypp.VNode {
+func renderControls(state *State) *hypp.VNode {
 	tale := state.currentTale()
 	var controls []*hypp.VNode
 	if tale == nil {
@@ -400,25 +297,23 @@ func renderControls(state *AdminState) *hypp.VNode {
 	)
 }
 
-func getHref() *url.URL {
-	href, err := url.Parse(js.Global().Get("location").Get("href").String())
+func getHref(window js.Value) *url.URL {
+	href, err := url.Parse(window.Get("location").Get("href").String())
 	if err != nil {
 		panic("Could not parse window.location.href as URL.")
 	}
 	return href
 }
 
-func RunAdmin(state *AdminState) {
+func runAdmin(state *State) {
 	el := js.Global().Get("document").Call("getElementById", "app")
 	if el.IsNull() {
 		panic("Could not find element with id 'app'.")
 	}
-	href := getHref()
-	state.updateFromQuery(href.Query())
-	hypp.App(hypp.AppProps[*AdminState]{
+	hypp.App(hypp.AppProps[*State]{
 		Driver: jsd.Driver{},
 		Init:   state,
-		View: func(state *AdminState) *hypp.VNode {
+		View: func(state *State) *hypp.VNode {
 			return html.Main(
 				nil,
 				renderTreeView(state.Tree, state.Current),
@@ -428,9 +323,9 @@ func RunAdmin(state *AdminState) {
 		DispatchInitializer: func(dispatch hypp.Dispatch) hypp.Dispatch {
 			return func(dispatchable hypp.Dispatchable, payload hypp.Payload) {
 				switch v := dispatchable.(type) {
-				case hypp.StateAndEffects[*AdminState]:
+				case hypp.StateAndEffects[*State]:
 					historyPushState(v.State)
-				case *AdminState:
+				case *State:
 					historyPushState(v)
 				}
 				dispatch(dispatchable, payload)

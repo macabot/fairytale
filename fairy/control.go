@@ -12,8 +12,8 @@ func onChangeControl[T any](
 	talePath []int,
 	controlIndex int,
 	getEventData func(hypp.Event) T,
-) hypp.Action[*AdminState] {
-	return func(state *AdminState, payload hypp.Payload) hypp.Dispatchable {
+) hypp.Action[*State] {
+	return func(state *State, payload hypp.Payload) hypp.Dispatchable {
 		newState := state.clone()
 		event := payload.(hypp.Event)
 		tale := newState.getTale(talePath)
