@@ -21,14 +21,17 @@ type AdminState struct {
 }
 
 func (s *AdminState) updateFromQuery(query url.Values) {
-	fmt.Println("has path", query.Has("path"))
 	if query.Has("path") {
 		var path []int
 		if err := json.Unmarshal([]byte(query.Get("path")), &path); err != nil {
 			consoleWarn("Could not parse query param 'path'.")
 		} else {
-			fmt.Println("set path", path)
 			s.Current = path
+			node := s.Tree
+			for _, i := range path {
+				node = node.Children()[i]
+				node.SetIsOpen(true)
+			}
 		}
 	}
 	if query.Has("iFrameSize") {
@@ -161,7 +164,6 @@ func consoleWarn(args ...any) {
 func historyPushState(state *AdminState) {
 	href := getHref()
 	href.RawQuery = state.toQuery().Encode()
-	fmt.Println(">>", href.String())
 	js.Global().Get("history").Call("pushState", map[string]any{}, "", href.String())
 }
 
