@@ -320,7 +320,7 @@ func runAdmin(state *State) {
 				renderRightSide(state),
 			)
 		},
-		DispatchInitializer: func(dispatch hypp.Dispatch) hypp.Dispatch {
+		DispatchWrapper: func(dispatch hypp.Dispatch) hypp.Dispatch {
 			return func(dispatchable hypp.Dispatchable, payload hypp.Payload) {
 				switch v := dispatchable.(type) {
 				case hypp.StateAndEffects[*State]:
