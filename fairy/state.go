@@ -24,6 +24,18 @@ func (s State) getTale(path []int) *Tale {
 	return node.Tale()
 }
 
+func (s State) hasTale(path []int) bool {
+	node := s.Tree
+	for _, i := range path {
+		children := node.Children()
+		if i < 0 || i >= len(children) {
+			return false
+		}
+		node = children[i]
+	}
+	return true
+}
+
 func (s State) currentTale() *Tale {
 	return s.getTale(s.Current)
 }
@@ -37,6 +49,8 @@ func (s *State) updateFromQuery(query url.Values) {
 		var path []int
 		if err := json.Unmarshal([]byte(query.Get("path")), &path); err != nil {
 			consoleWarn("Could not parse query param 'path'.")
+		} else if !s.hasTale(path) {
+			consoleWarn("Could not find tale for query param 'path'.")
 		} else {
 			s.Current = path
 			node := s.Tree
