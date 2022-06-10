@@ -31,7 +31,7 @@ func selectTale(state *State, payload hypp.Payload) hypp.Dispatchable {
 	if equalPaths(path, state.Current) {
 		return state
 	}
-	newState := state.clone()
+	newState := state.Clone()
 	newState.Current = path
 	return newState
 }
@@ -42,10 +42,10 @@ func operateControl(state *State, payload hypp.Payload) hypp.Dispatchable {
 	if err := json.Unmarshal(raw, &data); err != nil {
 		panic(fmt.Errorf("fairy: cannot unmarshal operateControl data '%s': %w", string(raw), err))
 	}
-	tale := state.getTale(data.TalePath)
+	tale := state.GetTale(data.TalePath)
 	control := tale.controls[data.ControlIndex]
 	tale.state = control.UpdateFromMessage(tale.state, data.EventData)
-	return state.clone()
+	return state.Clone()
 }
 
 type MessageProps struct {
@@ -101,7 +101,7 @@ func runApp(state *State) {
 		Init:   state,
 		View: func(state *State) *hypp.VNode {
 			var assets []*hypp.VNode
-			currentTale := state.getTale(state.Current)
+			currentTale := state.GetTale(state.Current)
 			if currentTale != nil {
 				assets = state.Assets
 			}

@@ -31,3 +31,5 @@ func (t *Tale) Tale() *Tale               { return t }
 func (t Tale) IsOpen() bool               { return false }
 func (t *Tale) SetIsOpen(isOpen bool)     {}
 func (t Tale) View(state any) *hypp.VNode { return t.view(state) }
+func (t Tale) State() any                 { return t.state }
+func (t *Tale) SetState(state any)        { t.state = state }

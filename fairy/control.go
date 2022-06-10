@@ -14,9 +14,9 @@ func onChangeControl[T any](
 	getEventData func(hypp.Event) T,
 ) hypp.Action[*State] {
 	return func(state *State, payload hypp.Payload) hypp.Dispatchable {
-		newState := state.clone()
+		newState := state.Clone()
 		event := payload.(hypp.Event)
-		tale := newState.getTale(talePath)
+		tale := newState.GetTale(talePath)
 		control := tale.controls[controlIndex]
 		eventData := getEventData(event)
 		// TODO pass eventData instead of event to Update method?

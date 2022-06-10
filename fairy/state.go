@@ -16,7 +16,7 @@ type State struct {
 	Assets   []*hypp.VNode
 }
 
-func (s State) getTale(path []int) *Tale {
+func (s State) GetTale(path []int) *Tale {
 	node := s.Tree
 	for _, i := range path {
 		node = node.Children()[i]
@@ -37,10 +37,10 @@ func (s State) hasTale(path []int) bool {
 }
 
 func (s State) currentTale() *Tale {
-	return s.getTale(s.Current)
+	return s.GetTale(s.Current)
 }
 
-func (s State) clone() *State {
+func (s State) Clone() *State {
 	return &s
 }
 
