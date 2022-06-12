@@ -41,8 +41,9 @@ type Control interface {
 }
 
 type SelectOption[T any] struct {
-	Label string
-	Value T
+	Label    string
+	Value    T
+	disabled bool
 }
 
 func (s SelectOption[T]) Render(selected bool) *hypp.VNode {
@@ -54,6 +55,7 @@ func (s SelectOption[T]) Render(selected bool) *hypp.VNode {
 		hypp.HProps{
 			"value":    string(b),
 			"selected": selected,
+			"disabled": s.disabled,
 		},
 		hypp.Text(s.Label),
 	)
@@ -88,6 +90,12 @@ func (s SelectControl[S, T]) Render(state any, talePath []int, controlIndex int)
 	options := make([]*hypp.VNode, len(s.options))
 	for i, option := range s.options {
 		options[i] = option.Render(i == selectedIndex)
+	}
+	if selectedIndex < 0 || selectedIndex >= len(s.options) {
+		options = append(options, SelectOption[T]{
+			Label:    "[Selected index out of range]",
+			disabled: true,
+		}.Render(true))
 	}
 	return html.Label(
 		nil,
