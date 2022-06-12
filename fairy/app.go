@@ -10,14 +10,47 @@ import (
 	"github.com/macabot/hypp/tag/html"
 )
 
-var window hypp.Window = jsd.Driver{}.Window()
+func triggerTaleEvent(key string) hypp.Action[*State] {
+	return func(state *State, payload hypp.Payload) hypp.Dispatchable {
+		event := payload.(hypp.Event)
+		postMessageToTopFrame(Message[TaleEvent]{
+			Type: MessageTaleEvent,
+			Data: TaleEvent{Key: key, Event: event},
+		})
+		return state
+	}
+}
+
+func replaceEventHandlers(vNode *hypp.VNode) *hypp.VNode {
+	if vNode.Kind() != hypp.SSRNode {
+		return vNode
+	}
+	props := vNode.Props()
+	if props == nil {
+		return vNode
+	}
+	for key := range props {
+		if key[0] == 'o' && key[1] == 'n' {
+			props[key] = triggerTaleEvent(key)
+		}
+	}
+	children := make([]*hypp.VNode, len(vNode.Children()))
+	for i, child := range vNode.Children() {
+		children[i] = replaceEventHandlers(child)
+	}
+	return hypp.H(
+		vNode.Tag(),
+		props,
+		children...,
+	)
+}
 
 func renderCurrentTale(tale *Tale) *hypp.VNode {
 	var content *hypp.VNode
 	if tale == nil {
 		content = hypp.Text("Select a tale")
 	} else {
-		content = tale.View(tale.state)
+		content = replaceEventHandlers(tale.View(tale.state))
 	}
 	return content
 }
@@ -51,24 +84,6 @@ func operateControl(state *State, payload hypp.Payload) hypp.Dispatchable {
 type MessageProps struct {
 	Type         int
 	Dispatchable hypp.Dispatchable
-}
-
-func onMessage(dispatch hypp.Dispatch, payload hypp.Payload) hypp.Unsubscribe {
-	props := payload.(MessageProps)
-	listener := func(event hypp.Event) {
-		data := event.EscapeToValue().Get("data").String()
-		var message Message[json.RawMessage]
-		if err := json.Unmarshal([]byte(data), &message); err != nil {
-			panic(fmt.Errorf("Cannot unmarshal message with data: %s", data))
-		}
-		if message.Type == props.Type {
-			dispatch(props.Dispatchable, message.Data)
-		}
-	}
-	id := window.AddEventListener("message", listener)
-	return func() {
-		window.RemoveEventListener("message", id)
-	}
 }
 
 func onSelectTale(dispatchable hypp.Dispatchable) hypp.Subscription {

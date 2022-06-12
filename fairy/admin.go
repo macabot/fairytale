@@ -12,16 +12,6 @@ import (
 	"github.com/macabot/hypp/tag/html"
 )
 
-func postMessage[T any](message Message[T]) {
-	origin := js.Global().Get("window").Get("location").Get("origin")
-	iframeEl := js.Global().Get("document").Call("querySelector", "iframe")
-	b, err := json.Marshal(message)
-	if err != nil {
-		panic(fmt.Errorf("fairy: cannot JSON marshal message with type '%d': %w", message.Type, err))
-	}
-	iframeEl.Get("contentWindow").Call("postMessage", string(b), origin)
-}
-
 func consoleDebug(args ...any) {
 	js.Global().Get("console").Call("debug", args...)
 }
@@ -76,6 +66,21 @@ func equalPaths(a, b []int) bool {
 	return true
 }
 
+/*
+TODO debug
+panic: hypp: dispatchable has unexpected type '<nil>'. Expected type 'StateAndEffects[*fairy.State]', 'Action[*fairy.State]', 'ActionAndPayload[*fairy.State]' or '*fairy.State' wasm_exec.js:22:14
+<empty string> wasm_exec.js:22:14
+goroutine 6 [running]: wasm_exec.js:22:14
+github.com/macabot/hypp.app[...].func3({0x94d80, 0xb504c0}) wasm_exec.js:22:14
+	/home/michael/repos/github.com/macabot/hypp/engine.go:614 +0x27 wasm_exec.js:22:14
+github.com/macabot/hypp.app[...].func1.1() wasm_exec.js:22:14
+	/home/michael/repos/github.com/macabot/hypp/engine.go:581 +0x10 wasm_exec.js:22:14
+github.com/macabot/hypp/driver/js.EventTarget.AddEventListener.func1({{}, 0x7ff800010000006d, 0xb4e790}, {0xb504b0, 0x1, 0x1}) wasm_exec.js:22:14
+	/home/michael/repos/github.com/macabot/hypp/driver/js/js.go:98 +0x6 wasm_exec.js:22:14
+syscall/js.handleEvent() wasm_exec.js:22:14
+	/usr/local/go/src/syscall/js/func.go:94 +0x26
+*/
+
 func selectTaleByPath(path []int) hypp.Action[*State] {
 	return func(state *State, _ hypp.Payload) hypp.Dispatchable {
 		if equalPaths(state.Current, path) {
@@ -83,7 +88,8 @@ func selectTaleByPath(path []int) hypp.Action[*State] {
 		}
 		newState := state.Clone()
 		newState.Current = path
-		postMessage(Message[[]int]{
+		newState.TaleEvents = nil
+		postMessageToIFrame(Message[[]int]{
 			Type: MessageSelectTale,
 			Data: path,
 		})
@@ -100,6 +106,28 @@ func toggleNode(path []int) hypp.Action[*State] {
 		}
 		node.SetIsOpen(!node.IsOpen())
 		return newState
+	}
+}
+
+func appendTaleEvent(state *State, payload hypp.Payload) hypp.Dispatchable {
+	raw := payload.(json.RawMessage)
+	fmt.Println("appendTaleEvent", string(raw))
+	var taleEvent TaleEvent
+	if err := json.Unmarshal(raw, &taleEvent); err != nil {
+		panic(fmt.Errorf("fairy: cannot unmarshal appendTaleEvent data '%s': %w", string(raw), err))
+	}
+	newState := state.Clone()
+	newState.TaleEvents = append(newState.TaleEvents, taleEvent)
+	return newState
+}
+
+func onTaleEvent(dispatchable hypp.Dispatchable) hypp.Subscription {
+	return hypp.Subscription{
+		Subscriber: onMessage,
+		Payload: MessageProps{
+			Type:         MessageTaleEvent,
+			Dispatchable: dispatchable,
+		},
 	}
 }
 
@@ -183,7 +211,7 @@ func renderRightSide(state *State) *hypp.VNode {
 		hypp.HProps{"class": "right-side"},
 		renderSettings(state.Settings),
 		renderIFrame(state.Settings),
-		renderControls(state),
+		renderPanel(state),
 	)
 }
 
@@ -280,6 +308,58 @@ func renderIFrame(settings AdminSettings) *hypp.VNode {
 	)
 }
 
+func renderPanel(state *State) *hypp.VNode {
+	panels := []func() *hypp.VNode{
+		func() *hypp.VNode { return renderControls(state) },
+		func() *hypp.VNode { return renderTaleEvents(state.TaleEvents) },
+	}
+	controls := 0
+	if tale := state.currentTale(); tale != nil {
+		controls = len(tale.controls)
+	}
+	return html.Div(
+		hypp.HProps{"class": "panel"},
+		renderPanelTabs(
+			state.SelectedPanelTab,
+			fmt.Sprintf("Controls (%d)", controls),
+			fmt.Sprintf("Events (%d)", len(state.TaleEvents)),
+		),
+		panels[state.SelectedPanelTab](),
+	)
+}
+
+func renderPanelTabs(selectedTab int, names ...string) *hypp.VNode {
+	children := make([]*hypp.VNode, len(names))
+	for i, name := range names {
+		children[i] = renderPanelTab(i, name, i == selectedTab)
+	}
+	return html.Div(
+		hypp.HProps{"class": "panel-tabs"},
+		children...,
+	)
+}
+
+func selectPanelTab(i int) hypp.Action[*State] {
+	return func(state *State, _ hypp.Payload) hypp.Dispatchable {
+		newState := state.Clone()
+		newState.SelectedPanelTab = i
+		return newState
+	}
+}
+
+func renderPanelTab(i int, name string, selected bool) *hypp.VNode {
+	return html.Span(
+		hypp.HProps{
+			"class": map[string]bool{
+				"panel-tab": true,
+				"selected":  selected,
+			},
+			"onclick": selectPanelTab(i),
+		},
+		hypp.Text(name),
+	)
+}
+
 func renderControls(state *State) *hypp.VNode {
 	tale := state.currentTale()
 	var controls []*hypp.VNode
@@ -294,6 +374,28 @@ func renderControls(state *State) *hypp.VNode {
 	return html.Div(
 		hypp.HProps{"class": "controls"},
 		controls...,
+	)
+}
+
+func renderTaleEvents(taleEvents []TaleEvent) *hypp.VNode {
+	children := make([]*hypp.VNode, len(taleEvents))
+	for i, taleEvent := range taleEvents {
+		b, _ := json.Marshal(taleEvent.Event)
+		children[i] = html.Li(
+			hypp.HProps{"class": "tale-event"},
+			html.Span(hypp.HProps{"class": "key"}, hypp.Text(taleEvent.Key)),
+			html.Pre(nil, hypp.Text(string(b))),
+		)
+	}
+	var child *hypp.VNode
+	if len(taleEvents) == 0 {
+		child = hypp.Text("[No events have been triggered]")
+	} else {
+		child = html.Ul(nil, children...)
+	}
+	return html.Div(
+		hypp.HProps{"class": "tale-events"},
+		child,
 	)
 }
 
@@ -332,6 +434,11 @@ func runAdmin(state *State) {
 			}
 		},
 		Node: jsd.Node(el),
+		Subscriptions: func(state *State) []hypp.Subscription {
+			return []hypp.Subscription{
+				onTaleEvent(hypp.Action[*State](appendTaleEvent)),
+			}
+		},
 	})
 
 	select {} // run Go forever

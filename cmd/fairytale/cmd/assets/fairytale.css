@@ -44,11 +44,6 @@ iframe {
     border: none;
 }
 
-.controls {
-    height: 30%;
-    background-color: #EDC478;
-}
-
 /* Based on https://www.w3schools.com/howto/howto_js_treeview.asp */
 ul, .tree-root {
     list-style-type: none;
@@ -95,4 +90,26 @@ ul, .tree-root {
 
 .active {
     display: block;
+}
+
+.panel {
+    height: 30%;
+    background-color: #EDC478;
+}
+
+.panel-tabs {
+    background-color: #ac9f87;
+}
+
+.panel-tab {
+    margin: 1rem;
+    cursor: pointer;
+}
+
+.panel-tab.selected {
+    text-decoration: underline;
+}
+
+.tale-events ul {
+    list-style-type: disc;
 }

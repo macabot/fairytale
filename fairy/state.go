@@ -10,10 +10,12 @@ import (
 
 type State struct {
 	hypp.EmptyState
-	Tree     Node
-	Current  []int
-	Settings AdminSettings
-	Assets   []*hypp.VNode
+	Tree             Node
+	Current          []int
+	Settings         AdminSettings
+	Assets           []*hypp.VNode
+	TaleEvents       []TaleEvent
+	SelectedPanelTab int
 }
 
 func (s State) GetTale(path []int) *Tale {
