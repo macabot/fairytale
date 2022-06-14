@@ -50,7 +50,6 @@ func postMessageToTopFrame[T any](message Message[T]) {
 	if err != nil {
 		panic(fmt.Errorf("fairy: cannot JSON marshal message with type '%d': %w", message.Type, err))
 	}
-	fmt.Println("postMessageToTopFrame", string(b))
 	top.Call("postMessage", string(b), origin)
 }
 

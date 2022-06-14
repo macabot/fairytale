@@ -111,7 +111,6 @@ func toggleNode(path []int) hypp.Action[*State] {
 
 func appendTaleEvent(state *State, payload hypp.Payload) hypp.Dispatchable {
 	raw := payload.(json.RawMessage)
-	fmt.Println("appendTaleEvent", string(raw))
 	var taleEvent TaleEvent
 	if err := json.Unmarshal(raw, &taleEvent); err != nil {
 		panic(fmt.Errorf("fairy: cannot unmarshal appendTaleEvent data '%s': %w", string(raw), err))
