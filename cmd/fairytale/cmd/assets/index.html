@@ -7,6 +7,13 @@
         <link rel="stylesheet" href="/fairytale.css">
         <script src="wasm_exec.js"></script>
         <script>
+            // Prefix console logs with the frame name to distinguish the two frames.
+            const frameName = window.top === window.self ? 'admin' : 'app';
+            const old = console.log;
+            console.log = function() {
+                Array.prototype.unshift.call(arguments, frameName + ':');
+                old.apply(this, arguments)
+            }
 			const go = new Go();
 			WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject).then((result) => {
 				go.run(result.instance);
