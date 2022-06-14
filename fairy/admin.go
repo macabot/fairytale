@@ -86,7 +86,7 @@ func selectTaleByPath(path []int) hypp.Action[*State] {
 		if equalPaths(state.Current, path) {
 			return state
 		}
-		newState := state.Clone()
+		newState := state.clone()
 		newState.Current = path
 		newState.TaleEvents = nil
 		postMessageToIFrame(Message[[]int]{
@@ -99,7 +99,7 @@ func selectTaleByPath(path []int) hypp.Action[*State] {
 
 func toggleNode(path []int) hypp.Action[*State] {
 	return func(state *State, _ hypp.Payload) hypp.Dispatchable {
-		newState := state.Clone()
+		newState := state.clone()
 		node := state.Tree
 		for _, i := range path {
 			node = node.Children()[i]
@@ -238,7 +238,7 @@ func selectIFrameSize(state *State, payload hypp.Payload) hypp.Dispatchable {
 	value := event.Target().Value()
 	size := mustIFrameSizeFromString(value)
 
-	newState := state.Clone()
+	newState := state.clone()
 	newState.Settings.iFrameSize = size
 	return newState
 }
@@ -257,7 +257,7 @@ func renderIFrameSizeSelect(size IFrameSize) *hypp.VNode {
 }
 
 func toggleLandscape(state *State, _ hypp.Payload) hypp.Dispatchable {
-	newState := state.Clone()
+	newState := state.clone()
 	newState.Settings.landscape = !newState.Settings.landscape
 	return newState
 }

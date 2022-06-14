@@ -18,7 +18,7 @@ type State struct {
 	SelectedPanelTab int
 }
 
-func (s State) GetTale(path []int) *Tale {
+func (s State) getTale(path []int) *Tale {
 	node := s.Tree
 	for _, i := range path {
 		node = node.Children()[i]
@@ -39,10 +39,10 @@ func (s State) hasTale(path []int) bool {
 }
 
 func (s State) currentTale() *Tale {
-	return s.GetTale(s.Current)
+	return s.getTale(s.Current)
 }
 
-func (s State) Clone() *State {
+func (s State) clone() *State {
 	return &s
 }
 
