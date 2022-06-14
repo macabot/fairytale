@@ -116,7 +116,7 @@ func appendTaleEvent(state *State, payload hypp.Payload) hypp.Dispatchable {
 	if err := json.Unmarshal(raw, &taleEvent); err != nil {
 		panic(fmt.Errorf("fairy: cannot unmarshal appendTaleEvent data '%s': %w", string(raw), err))
 	}
-	newState := state.Clone()
+	newState := state.clone()
 	newState.TaleEvents = append(newState.TaleEvents, taleEvent)
 	return newState
 }
@@ -341,7 +341,7 @@ func renderPanelTabs(selectedTab int, names ...string) *hypp.VNode {
 
 func selectPanelTab(i int) hypp.Action[*State] {
 	return func(state *State, _ hypp.Payload) hypp.Dispatchable {
-		newState := state.Clone()
+		newState := state.clone()
 		newState.SelectedPanelTab = i
 		return newState
 	}
