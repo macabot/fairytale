@@ -29,5 +29,5 @@ func (t Tale) Name() string               { return t.name }
 func (t Tale) Children() []Node           { return nil }
 func (t *Tale) Tale() *Tale               { return t }
 func (t Tale) IsOpen() bool               { return false }
-func (t *Tale) SetIsOpen(isOpen bool)     {}
+func (t *Tale) SetIsOpen(isOpen bool)     { /* noop */ }
 func (t Tale) View(state any) *hypp.VNode { return t.view(state) }
