@@ -54,7 +54,7 @@ func postMessageToTopFrame[T any](message Message[T]) {
 }
 
 func onMessage(dispatch hypp.Dispatch, payload hypp.Payload) hypp.Unsubscribe {
-	props := payload.(MessageProps)
+	props := payload.(messageProps)
 	listener := func(event hypp.Event) {
 		data := event.EscapeToValue().Get("data").String()
 		var message Message[json.RawMessage]

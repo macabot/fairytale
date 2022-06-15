@@ -108,7 +108,7 @@ func appendTaleEvent(s *state, payload hypp.Payload) hypp.Dispatchable {
 func onTaleEvent(dispatchable hypp.Dispatchable) hypp.Subscription {
 	return hypp.Subscription{
 		Subscriber: onMessage,
-		Payload: MessageProps{
+		Payload: messageProps{
 			Type:         MessageTaleEvent,
 			Dispatchable: dispatchable,
 		},

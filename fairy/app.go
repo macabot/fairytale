@@ -81,7 +81,7 @@ func operateControl(s *state, payload hypp.Payload) hypp.Dispatchable {
 	return s.clone()
 }
 
-type MessageProps struct {
+type messageProps struct {
 	Type         int
 	Dispatchable hypp.Dispatchable
 }
@@ -89,7 +89,7 @@ type MessageProps struct {
 func onSelectTale(dispatchable hypp.Dispatchable) hypp.Subscription {
 	return hypp.Subscription{
 		Subscriber: onMessage,
-		Payload: MessageProps{
+		Payload: messageProps{
 			Type:         MessageSelectTale,
 			Dispatchable: dispatchable,
 		},
@@ -99,7 +99,7 @@ func onSelectTale(dispatchable hypp.Dispatchable) hypp.Subscription {
 func onOperateControl(dispatchable hypp.Dispatchable) hypp.Subscription {
 	return hypp.Subscription{
 		Subscriber: onMessage,
-		Payload: MessageProps{
+		Payload: messageProps{
 			Type:         MessageOperateControl,
 			Dispatchable: dispatchable,
 		},
