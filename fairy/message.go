@@ -22,7 +22,7 @@ const (
 	messageTaleEvent
 )
 
-type OperateControlData[T any] struct {
+type operateControlData[T any] struct {
 	TalePath     []int
 	ControlIndex int
 	EventData    T

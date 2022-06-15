@@ -21,9 +21,9 @@ func onChangeControl[T any](
 		eventData := getEventData(event)
 		// TODO pass eventData instead of event to Update method?
 		tale.myState = control.UpdateFromEvent(tale.myState, event)
-		postMessageToIFrame(message[OperateControlData[T]]{
+		postMessageToIFrame(message[operateControlData[T]]{
 			Type: messageOperateControl,
-			Data: OperateControlData[T]{
+			Data: operateControlData[T]{
 				TalePath:     talePath,
 				ControlIndex: controlIndex,
 				EventData:    eventData,

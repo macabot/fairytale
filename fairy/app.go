@@ -71,7 +71,7 @@ func selectTale(s *state, payload hypp.Payload) hypp.Dispatchable {
 
 func operateControl(s *state, payload hypp.Payload) hypp.Dispatchable {
 	raw := payload.(json.RawMessage)
-	var data OperateControlData[json.RawMessage]
+	var data operateControlData[json.RawMessage]
 	if err := json.Unmarshal(raw, &data); err != nil {
 		panic(fmt.Errorf("fairy: cannot unmarshal operateControl data '%s': %w", string(raw), err))
 	}
