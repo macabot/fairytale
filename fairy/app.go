@@ -13,9 +13,9 @@ import (
 func triggerTaleEvent(key string) hypp.Action[*state] {
 	return func(s *state, payload hypp.Payload) hypp.Dispatchable {
 		event := payload.(hypp.Event)
-		postMessageToTopFrame(message[TaleEvent]{
+		postMessageToTopFrame(message[taleEvent]{
 			Type: messageTaleEvent,
-			Data: TaleEvent{Key: key, Event: event},
+			Data: taleEvent{Key: key, Event: event},
 		})
 		return s
 	}

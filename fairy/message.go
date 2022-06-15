@@ -28,7 +28,7 @@ type operateControlData[T any] struct {
 	EventData    T
 }
 
-type TaleEvent struct {
+type taleEvent struct {
 	Key   string
 	Event any
 }

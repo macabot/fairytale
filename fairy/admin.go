@@ -96,12 +96,12 @@ func toggleNode(path []int) hypp.Action[*state] {
 
 func appendTaleEvent(s *state, payload hypp.Payload) hypp.Dispatchable {
 	raw := payload.(json.RawMessage)
-	var taleEvent TaleEvent
-	if err := json.Unmarshal(raw, &taleEvent); err != nil {
+	var event taleEvent
+	if err := json.Unmarshal(raw, &event); err != nil {
 		panic(fmt.Errorf("fairy: cannot unmarshal appendTaleEvent data '%s': %w", string(raw), err))
 	}
 	newState := s.clone()
-	newState.TaleEvents = append(newState.TaleEvents, taleEvent)
+	newState.TaleEvents = append(newState.TaleEvents, event)
 	return newState
 }
 
@@ -361,9 +361,9 @@ func renderControls(s *state) *hypp.VNode {
 	)
 }
 
-func renderTaleEvents(taleEvents []TaleEvent) *hypp.VNode {
-	children := make([]*hypp.VNode, len(taleEvents))
-	for i, taleEvent := range taleEvents {
+func renderTaleEvents(events []taleEvent) *hypp.VNode {
+	children := make([]*hypp.VNode, len(events))
+	for i, taleEvent := range events {
 		b, _ := json.Marshal(taleEvent.Event)
 		children[i] = html.Li(
 			hypp.HProps{"class": "tale-event"},
@@ -372,7 +372,7 @@ func renderTaleEvents(taleEvents []TaleEvent) *hypp.VNode {
 		)
 	}
 	var child *hypp.VNode
-	if len(taleEvents) == 0 {
+	if len(events) == 0 {
 		child = hypp.Text("[No events have been triggered]")
 	} else {
 		child = html.Ul(nil, children...)

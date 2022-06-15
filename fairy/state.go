@@ -14,7 +14,7 @@ type state struct {
 	Current          []int
 	Settings         AdminSettings
 	Assets           []*hypp.VNode
-	TaleEvents       []TaleEvent
+	TaleEvents       []taleEvent
 	SelectedPanelTab int
 }
 
