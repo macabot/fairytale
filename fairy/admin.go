@@ -44,9 +44,9 @@ func equalQuery(a, b url.Values) bool {
 	return true
 }
 
-func historyPushState(state *State) {
+func historyPushState(s *state) {
 	href := getHref(js.Global())
-	stateQuery := state.toQuery()
+	stateQuery := s.toQuery()
 	if equalQuery(href.Query(), stateQuery) {
 		return
 	}
@@ -66,27 +66,12 @@ func equalPaths(a, b []int) bool {
 	return true
 }
 
-/*
-TODO debug
-panic: hypp: dispatchable has unexpected type '<nil>'. Expected type 'StateAndEffects[*fairy.State]', 'Action[*fairy.State]', 'ActionAndPayload[*fairy.State]' or '*fairy.State' wasm_exec.js:22:14
-<empty string> wasm_exec.js:22:14
-goroutine 6 [running]: wasm_exec.js:22:14
-github.com/macabot/hypp.app[...].func3({0x94d80, 0xb504c0}) wasm_exec.js:22:14
-	/home/michael/repos/github.com/macabot/hypp/engine.go:614 +0x27 wasm_exec.js:22:14
-github.com/macabot/hypp.app[...].func1.1() wasm_exec.js:22:14
-	/home/michael/repos/github.com/macabot/hypp/engine.go:581 +0x10 wasm_exec.js:22:14
-github.com/macabot/hypp/driver/js.EventTarget.AddEventListener.func1({{}, 0x7ff800010000006d, 0xb4e790}, {0xb504b0, 0x1, 0x1}) wasm_exec.js:22:14
-	/home/michael/repos/github.com/macabot/hypp/driver/js/js.go:98 +0x6 wasm_exec.js:22:14
-syscall/js.handleEvent() wasm_exec.js:22:14
-	/usr/local/go/src/syscall/js/func.go:94 +0x26
-*/
-
-func selectTaleByPath(path []int) hypp.Action[*State] {
-	return func(state *State, _ hypp.Payload) hypp.Dispatchable {
-		if equalPaths(state.Current, path) {
-			return state
+func selectTaleByPath(path []int) hypp.Action[*state] {
+	return func(s *state, _ hypp.Payload) hypp.Dispatchable {
+		if equalPaths(s.Current, path) {
+			return s
 		}
-		newState := state.clone()
+		newState := s.clone()
 		newState.Current = path
 		newState.TaleEvents = nil
 		postMessageToIFrame(Message[[]int]{
@@ -97,10 +82,10 @@ func selectTaleByPath(path []int) hypp.Action[*State] {
 	}
 }
 
-func toggleNode(path []int) hypp.Action[*State] {
-	return func(state *State, _ hypp.Payload) hypp.Dispatchable {
-		newState := state.clone()
-		node := state.Tree
+func toggleNode(path []int) hypp.Action[*state] {
+	return func(s *state, _ hypp.Payload) hypp.Dispatchable {
+		newState := s.clone()
+		node := s.Tree
 		for _, i := range path {
 			node = node.children()[i]
 		}
@@ -109,13 +94,13 @@ func toggleNode(path []int) hypp.Action[*State] {
 	}
 }
 
-func appendTaleEvent(state *State, payload hypp.Payload) hypp.Dispatchable {
+func appendTaleEvent(s *state, payload hypp.Payload) hypp.Dispatchable {
 	raw := payload.(json.RawMessage)
 	var taleEvent TaleEvent
 	if err := json.Unmarshal(raw, &taleEvent); err != nil {
 		panic(fmt.Errorf("fairy: cannot unmarshal appendTaleEvent data '%s': %w", string(raw), err))
 	}
-	newState := state.clone()
+	newState := s.clone()
 	newState.TaleEvents = append(newState.TaleEvents, taleEvent)
 	return newState
 }
@@ -205,12 +190,12 @@ func renderTreeView(tree Node, current []int) *hypp.VNode {
 	)
 }
 
-func renderRightSide(state *State) *hypp.VNode {
+func renderRightSide(s *state) *hypp.VNode {
 	return html.Div(
 		hypp.HProps{"class": "right-side"},
-		renderSettings(state.Settings),
-		renderIFrame(state.Settings),
-		renderPanel(state),
+		renderSettings(s.Settings),
+		renderIFrame(s.Settings),
+		renderPanel(s),
 	)
 }
 
@@ -232,12 +217,12 @@ func renderIFrameSize(size IFrameSize, selected bool) *hypp.VNode {
 	)
 }
 
-func selectIFrameSize(state *State, payload hypp.Payload) hypp.Dispatchable {
+func selectIFrameSize(s *state, payload hypp.Payload) hypp.Dispatchable {
 	event := payload.(hypp.Event)
 	value := event.Target().Value()
 	size := mustIFrameSizeFromString(value)
 
-	newState := state.clone()
+	newState := s.clone()
 	newState.Settings.iFrameSize = size
 	return newState
 }
@@ -249,14 +234,14 @@ func renderIFrameSizeSelect(size IFrameSize) *hypp.VNode {
 	}
 	return html.Select(
 		hypp.HProps{
-			"onchange": hypp.Action[*State](selectIFrameSize),
+			"onchange": hypp.Action[*state](selectIFrameSize),
 		},
 		options...,
 	)
 }
 
-func toggleLandscape(state *State, _ hypp.Payload) hypp.Dispatchable {
-	newState := state.clone()
+func toggleLandscape(s *state, _ hypp.Payload) hypp.Dispatchable {
+	newState := s.clone()
 	newState.Settings.landscape = !newState.Settings.landscape
 	return newState
 }
@@ -264,7 +249,7 @@ func toggleLandscape(state *State, _ hypp.Payload) hypp.Dispatchable {
 func renderLandscapeToggle(landscape bool) *hypp.VNode {
 	return html.Select(
 		hypp.HProps{
-			"onchange": hypp.Action[*State](toggleLandscape),
+			"onchange": hypp.Action[*state](toggleLandscape),
 		},
 		html.Option(
 			hypp.HProps{
@@ -307,23 +292,23 @@ func renderIFrame(settings AdminSettings) *hypp.VNode {
 	)
 }
 
-func renderPanel(state *State) *hypp.VNode {
+func renderPanel(s *state) *hypp.VNode {
 	panels := []func() *hypp.VNode{
-		func() *hypp.VNode { return renderControls(state) },
-		func() *hypp.VNode { return renderTaleEvents(state.TaleEvents) },
+		func() *hypp.VNode { return renderControls(s) },
+		func() *hypp.VNode { return renderTaleEvents(s.TaleEvents) },
 	}
 	controls := 0
-	if tale := state.currentTale(); tale != nil {
+	if tale := s.currentTale(); tale != nil {
 		controls = len(tale.myControls)
 	}
 	return html.Div(
 		hypp.HProps{"class": "panel"},
 		renderPanelTabs(
-			state.SelectedPanelTab,
+			s.SelectedPanelTab,
 			fmt.Sprintf("Controls (%d)", controls),
-			fmt.Sprintf("Events (%d)", len(state.TaleEvents)),
+			fmt.Sprintf("Events (%d)", len(s.TaleEvents)),
 		),
-		panels[state.SelectedPanelTab](),
+		panels[s.SelectedPanelTab](),
 	)
 }
 
@@ -338,9 +323,9 @@ func renderPanelTabs(selectedTab int, names ...string) *hypp.VNode {
 	)
 }
 
-func selectPanelTab(i int) hypp.Action[*State] {
-	return func(state *State, _ hypp.Payload) hypp.Dispatchable {
-		newState := state.clone()
+func selectPanelTab(i int) hypp.Action[*state] {
+	return func(s *state, _ hypp.Payload) hypp.Dispatchable {
+		newState := s.clone()
 		newState.SelectedPanelTab = i
 		return newState
 	}
@@ -359,15 +344,15 @@ func renderPanelTab(i int, name string, selected bool) *hypp.VNode {
 	)
 }
 
-func renderControls(state *State) *hypp.VNode {
-	tale := state.currentTale()
+func renderControls(s *state) *hypp.VNode {
+	tale := s.currentTale()
 	var controls []*hypp.VNode
 	if tale == nil {
 		controls = []*hypp.VNode{hypp.Text("No controls: no tale has been selected")}
 	} else {
 		controls = make([]*hypp.VNode, len(tale.myControls))
 		for i, control := range tale.myControls {
-			controls[i] = control.Render(tale.myState, state.Current, i)
+			controls[i] = control.Render(tale.myState, s.Current, i)
 		}
 	}
 	return html.Div(
@@ -406,36 +391,36 @@ func getHref(window js.Value) *url.URL {
 	return href
 }
 
-func runAdmin(state *State) {
+func runAdmin(s *state) {
 	el := js.Global().Get("document").Call("getElementById", "app")
 	if el.IsNull() {
 		panic("Could not find element with id 'app'.")
 	}
-	hypp.App(hypp.AppProps[*State]{
+	hypp.App(hypp.AppProps[*state]{
 		Driver: jsd.Driver{},
-		Init:   state,
-		View: func(state *State) *hypp.VNode {
+		Init:   s,
+		View: func(s *state) *hypp.VNode {
 			return html.Main(
 				nil,
-				renderTreeView(state.Tree, state.Current),
-				renderRightSide(state),
+				renderTreeView(s.Tree, s.Current),
+				renderRightSide(s),
 			)
 		},
 		DispatchWrapper: func(dispatch hypp.Dispatch) hypp.Dispatch {
 			return func(dispatchable hypp.Dispatchable, payload hypp.Payload) {
 				switch v := dispatchable.(type) {
-				case hypp.StateAndEffects[*State]:
+				case hypp.StateAndEffects[*state]:
 					historyPushState(v.State)
-				case *State:
+				case *state:
 					historyPushState(v)
 				}
 				dispatch(dispatchable, payload)
 			}
 		},
 		Node: jsd.Node(el),
-		Subscriptions: func(state *State) []hypp.Subscription {
+		Subscriptions: func(_ *state) []hypp.Subscription {
 			return []hypp.Subscription{
-				onTaleEvent(hypp.Action[*State](appendTaleEvent)),
+				onTaleEvent(hypp.Action[*state](appendTaleEvent)),
 			}
 		},
 	})

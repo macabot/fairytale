@@ -12,9 +12,9 @@ func onChangeControl[T any](
 	talePath []int,
 	controlIndex int,
 	getEventData func(hypp.Event) T,
-) hypp.Action[*State] {
-	return func(state *State, payload hypp.Payload) hypp.Dispatchable {
-		newState := state.clone()
+) hypp.Action[*state] {
+	return func(s *state, payload hypp.Payload) hypp.Dispatchable {
+		newState := s.clone()
 		event := payload.(hypp.Event)
 		tale := newState.getTale(talePath)
 		control := tale.myControls[controlIndex]

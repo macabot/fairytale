@@ -8,7 +8,7 @@ import (
 	"github.com/macabot/hypp"
 )
 
-type State struct {
+type state struct {
 	hypp.EmptyState
 	Tree             Node
 	Current          []int
@@ -18,7 +18,7 @@ type State struct {
 	SelectedPanelTab int
 }
 
-func (s State) getTale(path []int) *Tale {
+func (s state) getTale(path []int) *Tale {
 	node := s.Tree
 	for _, i := range path {
 		node = node.children()[i]
@@ -26,7 +26,7 @@ func (s State) getTale(path []int) *Tale {
 	return node.tale()
 }
 
-func (s State) hasTale(path []int) bool {
+func (s state) hasTale(path []int) bool {
 	node := s.Tree
 	for _, i := range path {
 		children := node.children()
@@ -38,15 +38,15 @@ func (s State) hasTale(path []int) bool {
 	return true
 }
 
-func (s State) currentTale() *Tale {
+func (s state) currentTale() *Tale {
 	return s.getTale(s.Current)
 }
 
-func (s State) clone() *State {
+func (s state) clone() *state {
 	return &s
 }
 
-func (s *State) updateFromQuery(query url.Values) {
+func (s *state) updateFromQuery(query url.Values) {
 	if query.Has("path") {
 		var path []int
 		if err := json.Unmarshal([]byte(query.Get("path")), &path); err != nil {
@@ -78,7 +78,7 @@ func (s *State) updateFromQuery(query url.Values) {
 	}
 }
 
-func (s State) toQuery() url.Values {
+func (s state) toQuery() url.Values {
 	query := url.Values{}
 	if s.Current != nil {
 		b, err := json.Marshal(s.Current)

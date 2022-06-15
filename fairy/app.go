@@ -10,14 +10,14 @@ import (
 	"github.com/macabot/hypp/tag/html"
 )
 
-func triggerTaleEvent(key string) hypp.Action[*State] {
-	return func(state *State, payload hypp.Payload) hypp.Dispatchable {
+func triggerTaleEvent(key string) hypp.Action[*state] {
+	return func(s *state, payload hypp.Payload) hypp.Dispatchable {
 		event := payload.(hypp.Event)
 		postMessageToTopFrame(Message[TaleEvent]{
 			Type: MessageTaleEvent,
 			Data: TaleEvent{Key: key, Event: event},
 		})
-		return state
+		return s
 	}
 }
 
@@ -55,30 +55,30 @@ func renderCurrentTale(tale *Tale) *hypp.VNode {
 	return content
 }
 
-func selectTale(state *State, payload hypp.Payload) hypp.Dispatchable {
+func selectTale(s *state, payload hypp.Payload) hypp.Dispatchable {
 	raw := payload.(json.RawMessage)
 	var path []int
 	if err := json.Unmarshal(raw, &path); err != nil {
 		panic(fmt.Errorf("fairy: cannot unmarshal selectTale data '%s': %w", string(raw), err))
 	}
-	if equalPaths(path, state.Current) {
-		return state
+	if equalPaths(path, s.Current) {
+		return s
 	}
-	newState := state.clone()
+	newState := s.clone()
 	newState.Current = path
 	return newState
 }
 
-func operateControl(state *State, payload hypp.Payload) hypp.Dispatchable {
+func operateControl(s *state, payload hypp.Payload) hypp.Dispatchable {
 	raw := payload.(json.RawMessage)
 	var data OperateControlData[json.RawMessage]
 	if err := json.Unmarshal(raw, &data); err != nil {
 		panic(fmt.Errorf("fairy: cannot unmarshal operateControl data '%s': %w", string(raw), err))
 	}
-	tale := state.getTale(data.TalePath)
+	tale := s.getTale(data.TalePath)
 	control := tale.myControls[data.ControlIndex]
 	tale.myState = control.UpdateFromMessage(tale.myState, data.EventData)
-	return state.clone()
+	return s.clone()
 }
 
 type MessageProps struct {
@@ -106,19 +106,19 @@ func onOperateControl(dispatchable hypp.Dispatchable) hypp.Subscription {
 	}
 }
 
-func runApp(state *State) {
+func runApp(s *state) {
 	el := js.Global().Get("document").Call("querySelector", "html")
 	if el.IsNull() {
 		panic("Could not find <html> element.")
 	}
-	hypp.App(hypp.AppProps[*State]{
+	hypp.App(hypp.AppProps[*state]{
 		Driver: jsd.Driver{},
-		Init:   state,
-		View: func(state *State) *hypp.VNode {
+		Init:   s,
+		View: func(s *state) *hypp.VNode {
 			var assets []*hypp.VNode
-			currentTale := state.getTale(state.Current)
+			currentTale := s.getTale(s.Current)
 			if currentTale != nil {
-				assets = state.Assets
+				assets = s.Assets
 			}
 			headChildren := append(
 				assets,
@@ -141,10 +141,10 @@ func runApp(state *State) {
 			)
 		},
 		Node: jsd.Node(el),
-		Subscriptions: func(state *State) []hypp.Subscription {
+		Subscriptions: func(_ *state) []hypp.Subscription {
 			return []hypp.Subscription{
-				onSelectTale(hypp.Action[*State](selectTale)),
-				onOperateControl(hypp.Action[*State](operateControl)),
+				onSelectTale(hypp.Action[*state](selectTale)),
+				onOperateControl(hypp.Action[*state](operateControl)),
 			}
 		},
 	})
