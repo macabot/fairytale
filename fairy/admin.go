@@ -207,7 +207,7 @@ func renderSettings(settings AdminSettings) *hypp.VNode {
 	)
 }
 
-func renderIFrameSize(size IFrameSize, selected bool) *hypp.VNode {
+func renderIFrameSize(size iFrameSize, selected bool) *hypp.VNode {
 	return html.Option(
 		hypp.HProps{
 			"value":    size.String(),
@@ -227,7 +227,7 @@ func selectIFrameSize(s *state, payload hypp.Payload) hypp.Dispatchable {
 	return newState
 }
 
-func renderIFrameSizeSelect(size IFrameSize) *hypp.VNode {
+func renderIFrameSizeSelect(size iFrameSize) *hypp.VNode {
 	options := make([]*hypp.VNode, len(IFrameSizes))
 	for i, s := range IFrameSizes {
 		options[i] = renderIFrameSize(s, s.Equal(size))
