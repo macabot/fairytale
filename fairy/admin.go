@@ -74,7 +74,7 @@ func selectTaleByPath(path []int) hypp.Action[*state] {
 		newState := s.clone()
 		newState.Current = path
 		newState.TaleEvents = nil
-		postMessageToIFrame(Message[[]int]{
+		postMessageToIFrame(message[[]int]{
 			Type: MessageSelectTale,
 			Data: path,
 		})

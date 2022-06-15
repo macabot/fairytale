@@ -11,7 +11,7 @@ import (
 
 var window hypp.Window = jsd.Driver{}.Window()
 
-type Message[T any] struct {
+type message[T any] struct {
 	Type int
 	Data T
 }
@@ -33,22 +33,22 @@ type TaleEvent struct {
 	Event any
 }
 
-func postMessageToIFrame[T any](message Message[T]) {
+func postMessageToIFrame[T any](m message[T]) {
 	origin := js.Global().Get("window").Get("location").Get("origin")
 	iframeEl := js.Global().Get("document").Call("querySelector", "iframe")
-	b, err := json.Marshal(message)
+	b, err := json.Marshal(m)
 	if err != nil {
-		panic(fmt.Errorf("fairy: cannot JSON marshal message with type '%d': %w", message.Type, err))
+		panic(fmt.Errorf("fairy: cannot JSON marshal message with type '%d': %w", m.Type, err))
 	}
 	iframeEl.Get("contentWindow").Call("postMessage", string(b), origin)
 }
 
-func postMessageToTopFrame[T any](message Message[T]) {
+func postMessageToTopFrame[T any](m message[T]) {
 	origin := js.Global().Get("window").Get("location").Get("origin")
 	top := js.Global().Get("top")
-	b, err := json.Marshal(message)
+	b, err := json.Marshal(m)
 	if err != nil {
-		panic(fmt.Errorf("fairy: cannot JSON marshal message with type '%d': %w", message.Type, err))
+		panic(fmt.Errorf("fairy: cannot JSON marshal message with type '%d': %w", m.Type, err))
 	}
 	top.Call("postMessage", string(b), origin)
 }
@@ -57,12 +57,12 @@ func onMessage(dispatch hypp.Dispatch, payload hypp.Payload) hypp.Unsubscribe {
 	props := payload.(messageProps)
 	listener := func(event hypp.Event) {
 		data := event.EscapeToValue().Get("data").String()
-		var message Message[json.RawMessage]
-		if err := json.Unmarshal([]byte(data), &message); err != nil {
+		var m message[json.RawMessage]
+		if err := json.Unmarshal([]byte(data), &m); err != nil {
 			panic(fmt.Errorf("Cannot unmarshal message with data: %s", data))
 		}
-		if message.Type == props.Type {
-			dispatch(props.Dispatchable, message.Data)
+		if m.Type == props.Type {
+			dispatch(props.Dispatchable, m.Data)
 		}
 	}
 	id := window.AddEventListener("message", listener)
