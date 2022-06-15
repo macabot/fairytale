@@ -4,6 +4,7 @@ import "github.com/macabot/hypp"
 
 var _ Node = &Tale{}
 
+// Tale is Node that let's you develop and document a component.
 type Tale struct {
 	myName     string
 	myState    any
@@ -11,6 +12,7 @@ type Tale struct {
 	myControls []Control
 }
 
+// NewTale creates a new Tale.
 func NewTale[S any](
 	name string,
 	state S,

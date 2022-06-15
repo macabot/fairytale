@@ -33,19 +33,22 @@ func onChangeControl[T any](
 	}
 }
 
+// Control manages the state of a Tale. Typically, a Control manages a single
+// property of the state, however a Control can change the whole state.
 type Control interface {
-	Label() string
 	Render(state any, talePath []int, controlIndex int) *hypp.VNode
 	UpdateFromEvent(state any, event hypp.Event) any
 	UpdateFromMessage(state any, data json.RawMessage) any
 }
 
+// SelectOption represents a possible option for a SelectControl.
 type SelectOption[T any] struct {
 	Label    string
 	Value    T
 	disabled bool
 }
 
+// Render the SelectOption as an <option> HTML element.
 func (s SelectOption[T]) Render(selected bool) *hypp.VNode {
 	b, err := json.Marshal(s.Value)
 	if err != nil {
@@ -63,6 +66,8 @@ func (s SelectOption[T]) Render(selected bool) *hypp.VNode {
 
 var _ Control = &SelectControl[struct{}, struct{}]{}
 
+// SelectControl is a Control that let's you update the state by selecting one
+// of the available options.
 type SelectControl[S, T any] struct {
 	label         string
 	update        func(S, T) S
@@ -70,6 +75,7 @@ type SelectControl[S, T any] struct {
 	options       []SelectOption[T]
 }
 
+// NewSelectControl creates a new SelectControl.
 func NewSelectControl[S, T any](
 	label string,
 	update func(S, T) S,
@@ -84,7 +90,7 @@ func NewSelectControl[S, T any](
 	}
 }
 
-func (s SelectControl[S, T]) Label() string { return s.label }
+// Render renders the SelectControl as a <select> HTML element.
 func (s SelectControl[S, T]) Render(state any, talePath []int, controlIndex int) *hypp.VNode {
 	selectedIndex := s.selectedIndex(state.(S))
 	options := make([]*hypp.VNode, len(s.options))
@@ -128,12 +134,15 @@ func (s SelectControl[S, T]) UpdateFromMessage(state any, data json.RawMessage) 
 
 var _ Control = &CheckboxControl[struct{}]{}
 
+// CheckboxControl is a Control that let's you update the stage by toggling a
+// checkbox.
 type CheckboxControl[S any] struct {
 	label   string
 	update  func(state S, checked bool) S
 	checked func(S) bool
 }
 
+// NewCheckboxControl creates a new CheckboxControl.
 func NewCheckboxControl[S any](
 	label string,
 	update func(S, bool) S,
@@ -146,7 +155,7 @@ func NewCheckboxControl[S any](
 	}
 }
 
-func (c CheckboxControl[S]) Label() string { return c.label }
+// Render renders the CheckboxControl as a <input type="checkbox"> HTML element.
 func (c CheckboxControl[S]) Render(state any, path []int, controlIndex int) *hypp.VNode {
 	return html.Label(
 		nil,

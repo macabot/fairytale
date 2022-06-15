@@ -6,6 +6,7 @@ import (
 	"github.com/macabot/hypp"
 )
 
+// Run the Fairy Tale.
 func Run(tree Node, assets []*hypp.VNode) {
 	top := js.Global().Get("top")
 	inTopFrame := js.Global().Get("self").Equal(top)
