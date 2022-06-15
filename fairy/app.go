@@ -50,7 +50,7 @@ func renderCurrentTale(tale *Tale) *hypp.VNode {
 	if tale == nil {
 		content = hypp.Text("Select a tale")
 	} else {
-		content = replaceEventHandlers(tale.View(tale.state))
+		content = replaceEventHandlers(tale.view(tale.myState))
 	}
 	return content
 }
@@ -76,8 +76,8 @@ func operateControl(state *State, payload hypp.Payload) hypp.Dispatchable {
 		panic(fmt.Errorf("fairy: cannot unmarshal operateControl data '%s': %w", string(raw), err))
 	}
 	tale := state.getTale(data.TalePath)
-	control := tale.controls[data.ControlIndex]
-	tale.state = control.UpdateFromMessage(tale.state, data.EventData)
+	control := tale.myControls[data.ControlIndex]
+	tale.myState = control.UpdateFromMessage(tale.myState, data.EventData)
 	return state.clone()
 }
 

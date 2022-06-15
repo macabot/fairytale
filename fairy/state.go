@@ -21,15 +21,15 @@ type State struct {
 func (s State) getTale(path []int) *Tale {
 	node := s.Tree
 	for _, i := range path {
-		node = node.Children()[i]
+		node = node.children()[i]
 	}
-	return node.Tale()
+	return node.tale()
 }
 
 func (s State) hasTale(path []int) bool {
 	node := s.Tree
 	for _, i := range path {
-		children := node.Children()
+		children := node.children()
 		if i < 0 || i >= len(children) {
 			return false
 		}
@@ -57,8 +57,8 @@ func (s *State) updateFromQuery(query url.Values) {
 			s.Current = path
 			node := s.Tree
 			for _, i := range path {
-				node = node.Children()[i]
-				node.SetIsOpen(true)
+				node = node.children()[i]
+				node.setIsOpen(true)
 			}
 		}
 	}

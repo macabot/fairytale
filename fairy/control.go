@@ -17,10 +17,10 @@ func onChangeControl[T any](
 		newState := state.clone()
 		event := payload.(hypp.Event)
 		tale := newState.getTale(talePath)
-		control := tale.controls[controlIndex]
+		control := tale.myControls[controlIndex]
 		eventData := getEventData(event)
 		// TODO pass eventData instead of event to Update method?
-		tale.state = control.UpdateFromEvent(tale.state, event)
+		tale.myState = control.UpdateFromEvent(tale.myState, event)
 		postMessageToIFrame(Message[OperateControlData[T]]{
 			Type: MessageOperateControl,
 			Data: OperateControlData[T]{

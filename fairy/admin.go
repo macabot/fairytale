@@ -102,9 +102,9 @@ func toggleNode(path []int) hypp.Action[*State] {
 		newState := state.clone()
 		node := state.Tree
 		for _, i := range path {
-			node = node.Children()[i]
+			node = node.children()[i]
 		}
-		node.SetIsOpen(!node.IsOpen())
+		node.setIsOpen(!node.isOpen())
 		return newState
 	}
 }
@@ -145,8 +145,8 @@ func pathToKey(p []int) string {
 }
 
 func renderNode(n Node, isRoot bool, path []int, current []int) *hypp.VNode {
-	children := make([]*hypp.VNode, len(n.Children()))
-	for i, child := range n.Children() {
+	children := make([]*hypp.VNode, len(n.children()))
+	for i, child := range n.children() {
 		childPath := make([]int, len(path)+1)
 		copy(childPath, path)
 		childPath[len(childPath)-1] = i
@@ -157,7 +157,7 @@ func renderNode(n Node, isRoot bool, path []int, current []int) *hypp.VNode {
 			"class": map[string]bool{
 				"nested":    !isRoot,
 				"tree-root": isRoot,
-				"active":    n.IsOpen(),
+				"active":    n.isOpen(),
 			},
 			"key": pathToKey(path),
 		},
@@ -175,7 +175,7 @@ func renderNode(n Node, isRoot bool, path []int, current []int) *hypp.VNode {
 				},
 				"onclick": selectTaleByPath(path),
 			},
-			hypp.Text(n.Name()),
+			hypp.Text(n.name()),
 		)
 	}
 	return html.Li(
@@ -188,11 +188,11 @@ func renderNode(n Node, isRoot bool, path []int, current []int) *hypp.VNode {
 			hypp.HProps{
 				"class": map[string]bool{
 					"caret":      true,
-					"caret-down": n.IsOpen(),
+					"caret-down": n.isOpen(),
 				},
 				"onclick": toggleNode(path),
 			},
-			hypp.Text(n.Name()),
+			hypp.Text(n.name()),
 		),
 		ul,
 	)
@@ -314,7 +314,7 @@ func renderPanel(state *State) *hypp.VNode {
 	}
 	controls := 0
 	if tale := state.currentTale(); tale != nil {
-		controls = len(tale.controls)
+		controls = len(tale.myControls)
 	}
 	return html.Div(
 		hypp.HProps{"class": "panel"},
@@ -365,9 +365,9 @@ func renderControls(state *State) *hypp.VNode {
 	if tale == nil {
 		controls = []*hypp.VNode{hypp.Text("No controls: no tale has been selected")}
 	} else {
-		controls = make([]*hypp.VNode, len(tale.controls))
-		for i, control := range tale.controls {
-			controls[i] = control.Render(tale.state, state.Current, i)
+		controls = make([]*hypp.VNode, len(tale.myControls))
+		for i, control := range tale.myControls {
+			controls[i] = control.Render(tale.myState, state.Current, i)
 		}
 	}
 	return html.Div(

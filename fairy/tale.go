@@ -5,10 +5,10 @@ import "github.com/macabot/hypp"
 var _ Node = &Tale{}
 
 type Tale struct {
-	name     string
-	state    any
-	view     func(any) *hypp.VNode
-	controls []Control
+	myName     string
+	myState    any
+	myView     func(any) *hypp.VNode
+	myControls []Control
 }
 
 func NewTale[S any](
@@ -18,16 +18,16 @@ func NewTale[S any](
 	controls []Control,
 ) *Tale {
 	return &Tale{
-		name:     name,
-		state:    state,
-		view:     func(state any) *hypp.VNode { return view(state.(S)) },
-		controls: controls,
+		myName:     name,
+		myState:    state,
+		myView:     func(state any) *hypp.VNode { return view(state.(S)) },
+		myControls: controls,
 	}
 }
 
-func (t Tale) Name() string               { return t.name }
-func (t Tale) Children() []Node           { return nil }
-func (t *Tale) Tale() *Tale               { return t }
-func (t Tale) IsOpen() bool               { return false }
-func (t *Tale) SetIsOpen(isOpen bool)     { /* noop */ }
-func (t Tale) View(state any) *hypp.VNode { return t.view(state) }
+func (t Tale) name() string               { return t.myName }
+func (t Tale) children() []Node           { return nil }
+func (t *Tale) tale() *Tale               { return t }
+func (t Tale) isOpen() bool               { return false }
+func (t *Tale) setIsOpen(isOpen bool)     { /* noop */ }
+func (t Tale) view(state any) *hypp.VNode { return t.myView(state) }

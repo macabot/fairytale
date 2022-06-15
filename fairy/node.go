@@ -1,32 +1,32 @@
 package fairy
 
 type Node interface {
-	Name() string
-	Children() []Node
-	Tale() *Tale
-	IsOpen() bool
-	SetIsOpen(bool)
+	name() string
+	children() []Node
+	tale() *Tale
+	isOpen() bool
+	setIsOpen(bool)
 }
 
 var _ Node = &Branch{}
 
 type Branch struct {
-	name     string
-	children []Node
-	tale     *Tale
-	isOpen   bool
+	myName     string
+	myChildren []Node
+	myTale     *Tale
+	myIsOpen   bool
 }
 
-func (b Branch) Name() string           { return b.name }
-func (b Branch) Children() []Node       { return b.children }
-func (b Branch) Tale() *Tale            { return b.tale }
-func (b Branch) IsOpen() bool           { return b.isOpen }
-func (b *Branch) SetIsOpen(isOpen bool) { b.isOpen = isOpen }
+func (b Branch) name() string           { return b.myName }
+func (b Branch) children() []Node       { return b.myChildren }
+func (b Branch) tale() *Tale            { return b.myTale }
+func (b Branch) isOpen() bool           { return b.myIsOpen }
+func (b *Branch) setIsOpen(isOpen bool) { b.myIsOpen = isOpen }
 
 func NewTree(children ...Node) Node {
-	return &Branch{children: children, isOpen: true}
+	return &Branch{myChildren: children, myIsOpen: true}
 }
 
 func NewBranch(name string, children ...Node) Node {
-	return &Branch{name: name, children: children}
+	return &Branch{myName: name, myChildren: children}
 }
