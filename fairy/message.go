@@ -17,9 +17,9 @@ type message[T any] struct {
 }
 
 const (
-	MessageSelectTale = iota + 1
-	MessageOperateControl
-	MessageTaleEvent
+	messageSelectTale = iota + 1
+	messageOperateControl
+	messageTaleEvent
 )
 
 type OperateControlData[T any] struct {

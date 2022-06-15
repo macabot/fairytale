@@ -14,7 +14,7 @@ func triggerTaleEvent(key string) hypp.Action[*state] {
 	return func(s *state, payload hypp.Payload) hypp.Dispatchable {
 		event := payload.(hypp.Event)
 		postMessageToTopFrame(message[TaleEvent]{
-			Type: MessageTaleEvent,
+			Type: messageTaleEvent,
 			Data: TaleEvent{Key: key, Event: event},
 		})
 		return s
@@ -90,7 +90,7 @@ func onSelectTale(dispatchable hypp.Dispatchable) hypp.Subscription {
 	return hypp.Subscription{
 		Subscriber: onMessage,
 		Payload: messageProps{
-			Type:         MessageSelectTale,
+			Type:         messageSelectTale,
 			Dispatchable: dispatchable,
 		},
 	}
@@ -100,7 +100,7 @@ func onOperateControl(dispatchable hypp.Dispatchable) hypp.Subscription {
 	return hypp.Subscription{
 		Subscriber: onMessage,
 		Payload: messageProps{
-			Type:         MessageOperateControl,
+			Type:         messageOperateControl,
 			Dispatchable: dispatchable,
 		},
 	}

@@ -75,7 +75,7 @@ func selectTaleByPath(path []int) hypp.Action[*state] {
 		newState.Current = path
 		newState.TaleEvents = nil
 		postMessageToIFrame(message[[]int]{
-			Type: MessageSelectTale,
+			Type: messageSelectTale,
 			Data: path,
 		})
 		return newState
@@ -109,7 +109,7 @@ func onTaleEvent(dispatchable hypp.Dispatchable) hypp.Subscription {
 	return hypp.Subscription{
 		Subscriber: onMessage,
 		Payload: messageProps{
-			Type:         MessageTaleEvent,
+			Type:         messageTaleEvent,
 			Dispatchable: dispatchable,
 		},
 	}
