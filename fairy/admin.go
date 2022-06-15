@@ -228,8 +228,8 @@ func selectIFrameSize(s *state, payload hypp.Payload) hypp.Dispatchable {
 }
 
 func renderIFrameSizeSelect(size iFrameSize) *hypp.VNode {
-	options := make([]*hypp.VNode, len(IFrameSizes))
-	for i, s := range IFrameSizes {
+	options := make([]*hypp.VNode, len(iFrameSizes))
+	for i, s := range iFrameSizes {
 		options[i] = renderIFrameSize(s, s.Equal(size))
 	}
 	return html.Select(

@@ -12,7 +12,7 @@ var (
 	Size_iPhone_11_Pro = iFrameSize{375, 812}
 )
 
-var IFrameSizes = [...]iFrameSize{
+var iFrameSizes = [...]iFrameSize{
 	SizeDesktop,
 	Size_iPhone_11_Pro,
 }
