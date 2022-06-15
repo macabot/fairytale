@@ -63,7 +63,7 @@ func iFrameSizeFromString(s string) (iFrameSize, error) {
 	}
 }
 
-type AdminSettings struct {
+type adminSettings struct {
 	iFrameSize iFrameSize
 	landscape  bool
 }

@@ -199,7 +199,7 @@ func renderRightSide(s *state) *hypp.VNode {
 	)
 }
 
-func renderSettings(settings AdminSettings) *hypp.VNode {
+func renderSettings(settings adminSettings) *hypp.VNode {
 	return html.Div(
 		hypp.HProps{"class": "settings"},
 		renderIFrameSizeSelect(settings.iFrameSize),
@@ -268,7 +268,7 @@ func renderLandscapeToggle(landscape bool) *hypp.VNode {
 	)
 }
 
-func renderIFrame(settings AdminSettings) *hypp.VNode {
+func renderIFrame(settings adminSettings) *hypp.VNode {
 	size := settings.iFrameSize
 	if settings.landscape {
 		size.Swap()

@@ -12,7 +12,7 @@ type state struct {
 	hypp.EmptyState
 	Tree             Node
 	Current          []int
-	Settings         AdminSettings
+	Settings         adminSettings
 	Assets           []*hypp.VNode
 	TaleEvents       []taleEvent
 	SelectedPanelTab int
