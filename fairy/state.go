@@ -46,10 +46,17 @@ func (s state) clone() *state {
 	return &s
 }
 
-func (s *state) updateFromQuery(query url.Values) {
+func updateFromQueryAction(query url.Values) hypp.Action[*state] {
+	return func(s *state, _ hypp.Payload) hypp.Dispatchable {
+		return updateFromQuery(s, query)
+	}
+}
+
+func updateFromQuery(s *state, query url.Values) *state {
+	newState := s.clone()
 	if query.Has("path") {
 		slugs := strings.Split(query.Get("path"), "/")
-		node := s.Tree
+		node := newState.Tree
 		// Skip first segment which is an empty string.
 		path := make([]int, len(slugs)-1)
 		found := false
@@ -67,11 +74,11 @@ func (s *state) updateFromQuery(query url.Values) {
 				break
 			}
 		}
-		if !found || !s.hasTale(path) {
+		if !found || !newState.hasTale(path) {
 			consoleWarn("Could not find tale for query param 'path'.")
 		} else {
-			s.Current = path
-			node := s.Tree
+			newState.Current = path
+			node := newState.Tree
 			for _, i := range path {
 				node = node.children()[i]
 				node.setIsOpen(true)
@@ -82,16 +89,17 @@ func (s *state) updateFromQuery(query url.Values) {
 		if size, err := iFrameSizeFromSlug(query.Get("iFrameSize")); err != nil {
 			consoleWarn("Could not parse query param 'iFrameSize'.")
 		} else {
-			s.Settings.iFrameSize = size
+			newState.Settings.iFrameSize = size
 		}
 	}
 	if query.Has("landscape") {
 		if landscape, err := strconv.ParseBool(query.Get("landscape")); err != nil {
 			consoleWarn("Could not parse query param 'landscape'.")
 		} else {
-			s.Settings.landscape = landscape
+			newState.Settings.landscape = landscape
 		}
 	}
+	return newState
 }
 
 func (s state) toQuery() url.Values {

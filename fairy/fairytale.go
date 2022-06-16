@@ -12,7 +12,7 @@ func Run(tree Node, assets []*hypp.VNode) {
 	inTopFrame := js.Global().Get("self").Equal(top)
 	s := &state{Tree: tree, Assets: assets}
 	href := getHref(top)
-	s.updateFromQuery(href.Query())
+	s = updateFromQuery(s, href.Query())
 	if inTopFrame {
 		runAdmin(s)
 	} else {

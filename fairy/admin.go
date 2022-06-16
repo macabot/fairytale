@@ -69,20 +69,24 @@ func equalPaths(a, b []int) bool {
 	return true
 }
 
-func selectTaleByPath(path []int) hypp.Action[*state] {
+func selectTaleByPathAction(path []int) hypp.Action[*state] {
 	return func(s *state, _ hypp.Payload) hypp.Dispatchable {
-		if equalPaths(s.Current, path) {
-			return s
-		}
-		newState := s.clone()
-		newState.Current = path
-		newState.TaleEvents = nil
-		postMessageToIFrame(message[[]int]{
-			Type: messageSelectTale,
-			Data: path,
-		})
-		return newState
+		return selectTaleByPath(s, path)
 	}
+}
+
+func selectTaleByPath(s *state, path []int) *state {
+	if equalPaths(s.Current, path) {
+		return s
+	}
+	newState := s.clone()
+	newState.Current = path
+	newState.TaleEvents = nil
+	postMessageToIFrame(message[[]int]{
+		Type: messageSelectTale,
+		Data: path,
+	})
+	return newState
 }
 
 func toggleNode(path []int) hypp.Action[*state] {
@@ -114,6 +118,29 @@ func onTaleEvent(dispatchable hypp.Dispatchable) hypp.Subscription {
 		Payload: messageProps{
 			Type:         messageTaleEvent,
 			Dispatchable: dispatchable,
+		},
+	}
+}
+
+func onPopStateAction(query url.Values) hypp.Action[*state] {
+	return func(s *state, _ hypp.Payload) hypp.Dispatchable {
+		newState := updateFromQuery(s, query)
+		newState = selectTaleByPath(s, newState.Current)
+		return newState
+	}
+}
+
+func onPopState(jsWindow js.Value) hypp.Subscription {
+	return hypp.Subscription{
+		Subscriber: func(dispatch hypp.Dispatch, _ hypp.Payload) hypp.Unsubscribe {
+			listener := func(_ hypp.Event) {
+				query := getHref(jsWindow).Query()
+				dispatch(onPopStateAction(query), nil)
+			}
+			id := window.AddEventListener("popstate", listener)
+			return func() {
+				window.RemoveEventListener("popstate", id)
+			}
 		},
 	}
 }
@@ -161,7 +188,7 @@ func renderNode(n Node, isRoot bool, path []int, current []int) *hypp.VNode {
 					"tree-tale": true,
 					"selected":  selected,
 				},
-				"onclick": selectTaleByPath(path),
+				"onclick": selectTaleByPathAction(path),
 			},
 			hypp.Text(n.name()),
 		)
@@ -424,6 +451,7 @@ func runAdmin(s *state) {
 		Subscriptions: func(_ *state) []hypp.Subscription {
 			return []hypp.Subscription{
 				onTaleEvent(hypp.Action[*state](appendTaleEvent)),
+				onPopState(js.Global()),
 			}
 		},
 	})
