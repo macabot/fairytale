@@ -1,12 +1,16 @@
 package fairy
 
-import "github.com/macabot/hypp"
+import (
+	"github.com/gosimple/slug"
+	"github.com/macabot/hypp"
+)
 
 var _ Node = &Tale{}
 
 // Tale is Node that let's you develop and document a component.
 type Tale struct {
 	myName     string
+	mySlug     string
 	myState    any
 	myView     func(any) *hypp.VNode
 	myControls []Control
@@ -21,6 +25,7 @@ func NewTale[S any](
 ) *Tale {
 	return &Tale{
 		myName:     name,
+		mySlug:     slug.Make(name),
 		myState:    state,
 		myView:     func(state any) *hypp.VNode { return view(state.(S)) },
 		myControls: controls,
@@ -28,6 +33,7 @@ func NewTale[S any](
 }
 
 func (t Tale) name() string               { return t.myName }
+func (t Tale) slug() string               { return t.mySlug }
 func (t Tale) children() []Node           { return nil }
 func (t *Tale) tale() *Tale               { return t }
 func (t Tale) isOpen() bool               { return false }

@@ -1,9 +1,9 @@
 package fairy
 
 import (
-	"encoding/json"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/macabot/hypp"
 )
@@ -48,10 +48,26 @@ func (s state) clone() *state {
 
 func (s *state) updateFromQuery(query url.Values) {
 	if query.Has("path") {
-		var path []int
-		if err := json.Unmarshal([]byte(query.Get("path")), &path); err != nil {
-			consoleWarn("Could not parse query param 'path'.")
-		} else if !s.hasTale(path) {
+		slugs := strings.Split(query.Get("path"), "/")
+		node := s.Tree
+		// Skip first segment which is an empty string.
+		path := make([]int, len(slugs)-1)
+		found := false
+		for i := 1; i < len(slugs); i++ {
+			found = false
+			for pathI, child := range node.children() {
+				if child.slug() == slugs[i] {
+					path[i-1] = pathI
+					node = child
+					found = true
+					break
+				}
+			}
+			if !found {
+				break
+			}
+		}
+		if !found || !s.hasTale(path) {
 			consoleWarn("Could not find tale for query param 'path'.")
 		} else {
 			s.Current = path
@@ -81,11 +97,13 @@ func (s *state) updateFromQuery(query url.Values) {
 func (s state) toQuery() url.Values {
 	query := url.Values{}
 	if s.Current != nil {
-		b, err := json.Marshal(s.Current)
-		if err != nil {
-			panic("Could not JSON marshal State.Current")
+		slugs := make([]string, len(s.Current))
+		node := s.Tree
+		for i, pathI := range s.Current {
+			node = node.children()[pathI]
+			slugs[i] = node.slug()
 		}
-		query.Set("path", string(b))
+		query.Set("path", "/"+strings.Join(slugs, "/"))
 	}
 	query.Set("iFrameSize", s.Settings.iFrameSize.Slug())
 	query.Set("landscape", strconv.FormatBool(s.Settings.landscape))

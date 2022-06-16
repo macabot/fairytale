@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
+	"strings"
 	"syscall/js"
 
 	"github.com/macabot/hypp"
@@ -50,7 +51,9 @@ func historyPushState(s *state) {
 	if equalQuery(href.Query(), stateQuery) {
 		return
 	}
-	href.RawQuery = stateQuery.Encode()
+	// Replace %2F with / such that the path query param looks like a path.
+	// E.g. /foo/bar instead of %2Ffoo%2Fbar.
+	href.RawQuery = strings.ReplaceAll(stateQuery.Encode(), "%2F", "/")
 	js.Global().Get("history").Call("pushState", map[string]any{}, "", href.String())
 }
 
