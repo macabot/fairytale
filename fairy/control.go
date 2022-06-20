@@ -6,6 +6,7 @@ import (
 
 	"github.com/macabot/hypp"
 	"github.com/macabot/hypp/tag/html"
+	"golang.org/x/exp/constraints"
 )
 
 func onChangeControl[T any](
@@ -181,4 +182,90 @@ func (c CheckboxControl[S]) UpdateFromMessage(state any, data json.RawMessage) a
 		panic(fmt.Errorf("fairy: CheckboxControl cannot JSON unmarshal data '%s' to type %T: %w", data, checked, err))
 	}
 	return c.update(state.(S), checked)
+}
+
+var _ Control = &NumberInputControl[struct{}, float64]{}
+
+type Number interface {
+	constraints.Integer | constraints.Float
+}
+
+type NumberInputControl[S any, N Number] struct {
+	label  string
+	update func(state S, value N) S
+	value  func(S) N
+	min    *N
+	max    *N
+	step   *N
+}
+
+func NewNumberInputControl[S any, N Number](
+	label string,
+	update func(state S, value N) S,
+	value func(state S) N,
+) *NumberInputControl[S, N] {
+	return &NumberInputControl[S, N]{
+		label:  label,
+		update: update,
+		value:  value,
+	}
+}
+
+func (n *NumberInputControl[S, N]) WithMin(min N) *NumberInputControl[S, N] {
+	n.min = &min
+	return n
+}
+
+func (n *NumberInputControl[S, N]) WithMax(max N) *NumberInputControl[S, N] {
+	n.max = &max
+	return n
+}
+
+func (n *NumberInputControl[S, N]) WithStep(step N) *NumberInputControl[S, N] {
+	n.step = &step
+	return n
+}
+
+func (n NumberInputControl[S, N]) parseNumber(b []byte) N {
+	var number N
+	if err := json.Unmarshal(b, &number); err != nil {
+		panic(fmt.Errorf("fairy: NumberInputControl cannot parse '%s' as type %T: %w", b, number, err))
+	}
+	return number
+}
+
+func (n NumberInputControl[S, N]) Render(state any, path []int, controlIndex int) *hypp.VNode {
+	inputProps := hypp.HProps{
+		"type":  "number",
+		"value": n.value(state.(S)),
+		"onchange": onChangeControl(path, controlIndex, func(event hypp.Event) N {
+			return n.parseNumber([]byte(event.Target().Value()))
+		}),
+	}
+	if n.min != nil {
+		inputProps["min"] = *n.min
+	}
+	if n.max != nil {
+		inputProps["max"] = *n.max
+	}
+	if n.step != nil {
+		inputProps["step"] = *n.step
+	}
+	return html.Label(
+		nil,
+		hypp.Text(n.label),
+		html.Input(
+			inputProps,
+		),
+	)
+}
+
+func (n NumberInputControl[S, N]) UpdateFromEvent(state any, event hypp.Event) any {
+	value := n.parseNumber([]byte(event.Target().Value()))
+	return n.update(state.(S), value)
+}
+
+func (n NumberInputControl[S, N]) UpdateFromMessage(state any, data json.RawMessage) any {
+	number := n.parseNumber(data)
+	return n.update(state.(S), number)
 }
