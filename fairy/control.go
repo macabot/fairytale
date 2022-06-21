@@ -260,12 +260,24 @@ func (n NumberInputControl[S, N]) Render(state any, path []int, controlIndex int
 	)
 }
 
+func (n NumberInputControl[S, N]) keepInRange(number N) N {
+	if n.min != nil && number < *n.min {
+		number = *n.min
+	}
+	if n.max != nil && number > *n.max {
+		number = *n.max
+	}
+	return number
+}
+
 func (n NumberInputControl[S, N]) UpdateFromEvent(state any, event hypp.Event) any {
-	value := n.parseNumber([]byte(event.Target().Value()))
-	return n.update(state.(S), value)
+	number := n.parseNumber([]byte(event.Target().Value()))
+	number = n.keepInRange(number)
+	return n.update(state.(S), number)
 }
 
 func (n NumberInputControl[S, N]) UpdateFromMessage(state any, data json.RawMessage) any {
 	number := n.parseNumber(data)
+	number = n.keepInRange(number)
 	return n.update(state.(S), number)
 }
