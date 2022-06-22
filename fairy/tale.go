@@ -21,14 +21,12 @@ func NewTale[S any](
 	name string,
 	state S,
 	view func(S) *hypp.VNode,
-	controls []Control,
 ) *Tale {
 	return &Tale{
-		myName:     name,
-		mySlug:     slug.Make(name),
-		myState:    state,
-		myView:     func(state any) *hypp.VNode { return view(state.(S)) },
-		myControls: controls,
+		myName:  name,
+		mySlug:  slug.Make(name),
+		myState: state,
+		myView:  func(state any) *hypp.VNode { return view(state.(S)) },
 	}
 }
 
@@ -39,3 +37,7 @@ func (t *Tale) tale() *Tale               { return t }
 func (t Tale) isOpen() bool               { return false }
 func (t *Tale) setIsOpen(isOpen bool)     { /* noop */ }
 func (t Tale) view(state any) *hypp.VNode { return t.myView(state) }
+func (t *Tale) WithControls(controls ...Control) *Tale {
+	t.myControls = controls
+	return t
+}
