@@ -196,7 +196,6 @@ type NumberInputControl[S any, N Number] struct {
 	value  func(S) N
 	min    *N
 	max    *N
-	step   *N
 }
 
 func NewNumberInputControl[S any, N Number](
@@ -221,11 +220,6 @@ func (n *NumberInputControl[S, N]) WithMax(max N) *NumberInputControl[S, N] {
 	return n
 }
 
-func (n *NumberInputControl[S, N]) WithStep(step N) *NumberInputControl[S, N] {
-	n.step = &step
-	return n
-}
-
 func (n NumberInputControl[S, N]) parseNumber(b []byte) N {
 	var number N
 	if err := json.Unmarshal(b, &number); err != nil {
@@ -247,9 +241,6 @@ func (n NumberInputControl[S, N]) Render(state any, path []int, controlIndex int
 	}
 	if n.max != nil {
 		inputProps["max"] = *n.max
-	}
-	if n.step != nil {
-		inputProps["step"] = *n.step
 	}
 	return html.Label(
 		nil,
