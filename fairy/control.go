@@ -254,9 +254,7 @@ func (n NumberInputControl[S, N]) Render(state any, path []int, controlIndex int
 	return html.Label(
 		nil,
 		hypp.Text(n.label),
-		html.Input(
-			inputProps,
-		),
+		html.Input(inputProps),
 	)
 }
 
@@ -280,4 +278,70 @@ func (n NumberInputControl[S, N]) UpdateFromMessage(state any, data json.RawMess
 	number := n.parseNumber(data)
 	number = n.keepInRange(number)
 	return n.update(state.(S), number)
+}
+
+var _ Control = &TextInputControl[struct{}]{}
+
+type TextInputControl[S any] struct {
+	label     string
+	update    func(state S, text string) S
+	value     func(S) string
+	minLength *int
+	maxLength *int
+}
+
+func NewTextInputControl[S any](
+	label string,
+	update func(state S, text string) S,
+	value func(state S) string,
+) *TextInputControl[S] {
+	return &TextInputControl[S]{
+		label:  label,
+		update: update,
+		value:  value,
+	}
+}
+
+func (t *TextInputControl[S]) WithMinLength(minLength int) *TextInputControl[S] {
+	t.minLength = &minLength
+	return t
+}
+
+func (t *TextInputControl[S]) WithMaxLength(maxLength int) *TextInputControl[S] {
+	t.maxLength = &maxLength
+	return t
+}
+
+func (t TextInputControl[S]) Render(state any, path []int, controlIndex int) *hypp.VNode {
+	inputProps := hypp.HProps{
+		"type":  "text",
+		"value": t.value(state.(S)),
+		"oninput": onChangeControl(path, controlIndex, func(event hypp.Event) string {
+			return event.Target().Value()
+		}),
+	}
+	if t.minLength != nil {
+		inputProps["minlength"] = *t.minLength
+	}
+	if t.maxLength != nil {
+		inputProps["maxlength"] = *t.maxLength
+	}
+	return html.Label(
+		nil,
+		hypp.Text(t.label),
+		html.Input(inputProps),
+	)
+}
+
+func (t TextInputControl[S]) UpdateFromEvent(state any, event hypp.Event) any {
+	text := event.Target().Value()
+	return t.update(state.(S), text)
+}
+
+func (t TextInputControl[S]) UpdateFromMessage(state any, data json.RawMessage) any {
+	var text string
+	if err := json.Unmarshal(data, &text); err != nil {
+		panic(fmt.Errorf("fairy: TextInputControl cannot parse '%s' as type %T: %w", data, text, err))
+	}
+	return t.update(state.(S), text)
 }
