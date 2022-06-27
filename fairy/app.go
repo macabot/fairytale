@@ -22,6 +22,9 @@ func triggerTaleEvent(key string) hypp.Action[*state] {
 }
 
 func replaceEventHandlers(vNode *hypp.VNode) *hypp.VNode {
+	if vNode == nil {
+		return vNode
+	}
 	if vNode.Kind() != hypp.SSRNode {
 		return vNode
 	}
