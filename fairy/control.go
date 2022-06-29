@@ -3,6 +3,7 @@ package fairy
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	"github.com/macabot/hypp"
 	"github.com/macabot/hypp/tag/html"
@@ -231,16 +232,16 @@ func (n NumberInputControl[S, N]) parseNumber(b []byte) N {
 func (n NumberInputControl[S, N]) Render(state any, path []int, controlIndex int) *hypp.VNode {
 	inputProps := hypp.HProps{
 		"type":  "number",
-		"value": n.value(state.(S)),
+		"value": fmt.Sprint(n.value(state.(S))),
 		"onchange": onChangeControl(path, controlIndex, func(event hypp.Event) N {
 			return n.parseNumber([]byte(event.Target().Value()))
 		}),
 	}
 	if n.min != nil {
-		inputProps["min"] = *n.min
+		inputProps["min"] = fmt.Sprint(*n.min)
 	}
 	if n.max != nil {
-		inputProps["max"] = *n.max
+		inputProps["max"] = fmt.Sprint(*n.max)
 	}
 	return html.Label(
 		nil,
@@ -312,10 +313,10 @@ func (t TextInputControl[S]) Render(state any, path []int, controlIndex int) *hy
 		}),
 	}
 	if t.minLength != nil {
-		inputProps["minlength"] = *t.minLength
+		inputProps["minlength"] = strconv.Itoa(*t.minLength)
 	}
 	if t.maxLength != nil {
-		inputProps["maxlength"] = *t.maxLength
+		inputProps["maxlength"] = strconv.Itoa(*t.maxLength)
 	}
 	return html.Label(
 		nil,
