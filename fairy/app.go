@@ -30,21 +30,22 @@ func replaceEventHandlers(vNode *hypp.VNode) *hypp.VNode {
 	}
 	props := vNode.Props()
 	if props == nil {
-		return vNode
+		props = hypp.HProps{}
 	}
 	for key := range props {
 		if key[0] == 'o' && key[1] == 'n' {
 			props[key] = triggerTaleEvent(key)
 		}
 	}
-	children := make([]*hypp.VNode, len(vNode.Children()))
-	for i, child := range vNode.Children() {
-		children[i] = replaceEventHandlers(child)
+	children := vNode.Children()
+	newChildren := make([]*hypp.VNode, len(children))
+	for i := 0; i < len(children); i++ {
+		newChildren[i] = replaceEventHandlers(children[i])
 	}
 	return hypp.H(
 		vNode.Tag(),
 		props,
-		children...,
+		newChildren...,
 	)
 }
 
