@@ -18,6 +18,7 @@ main {
 
 .tree-view {
     width: 15%;
+    min-width: 230px;
     background-color: #C62C71;
 }
 
