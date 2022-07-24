@@ -85,6 +85,23 @@ func operateControl(s *state, payload hypp.Payload) hypp.Dispatchable {
 	return s.clone()
 }
 
+func changeTota11y(s *state, payload hypp.Payload) hypp.Dispatchable {
+	raw := payload.(json.RawMessage)
+	var enabled bool
+	if err := json.Unmarshal(raw, &enabled); err != nil {
+		panic(fmt.Errorf("fairy: cannot unmarshal changeTota11y data '%s': %w", string(raw), err))
+	}
+	newState := s.clone()
+	newState.Settings.tota11y = enabled
+	if !enabled {
+		toolbar := js.Global().Get("document").Call("getElementById", "tota11y-toolbar")
+		if !toolbar.IsNull() {
+			toolbar.Get("parentElement").Call("removeChild", toolbar)
+		}
+	}
+	return newState
+}
+
 type messageProps struct {
 	Type         int
 	Dispatchable hypp.Dispatchable
@@ -105,6 +122,16 @@ func onOperateControl(dispatchable hypp.Dispatchable) hypp.Subscription {
 		Subscriber: onMessage,
 		Payload: messageProps{
 			Type:         messageOperateControl,
+			Dispatchable: dispatchable,
+		},
+	}
+}
+
+func onToggleTota11y(dispatchable hypp.Dispatchable) hypp.Subscription {
+	return hypp.Subscription{
+		Subscriber: onMessage,
+		Payload: messageProps{
+			Type:         messageToggleTota11y,
 			Dispatchable: dispatchable,
 		},
 	}
@@ -132,6 +159,10 @@ func runApp(s *state) {
 					"content": "width=device-width, initial-scale=1.0",
 				}),
 			)
+			var tota11yScript *hypp.VNode
+			if s.Settings.tota11y {
+				tota11yScript = html.Script(hypp.HProps{"src": "https://cdnjs.cloudflare.com/ajax/libs/tota11y/0.1.6/tota11y.min.js"})
+			}
 			return html.Html(
 				nil,
 				html.Head(
@@ -141,6 +172,7 @@ func runApp(s *state) {
 				html.Body(
 					nil,
 					renderCurrentTale(currentTale),
+					tota11yScript,
 				),
 			)
 		},
@@ -149,6 +181,7 @@ func runApp(s *state) {
 			return []hypp.Subscription{
 				onSelectTale(hypp.Action[*state](selectTale)),
 				onOperateControl(hypp.Action[*state](operateControl)),
+				onToggleTota11y(hypp.Action[*state](changeTota11y)),
 			}
 		},
 	})

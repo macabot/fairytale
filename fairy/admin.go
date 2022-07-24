@@ -234,6 +234,7 @@ func renderSettings(settings adminSettings) *hypp.VNode {
 		hypp.HProps{"class": "settings"},
 		renderIFrameSizeSelect(settings.iFrameSize),
 		renderLandscapeToggle(settings.landscape),
+		renderTota11yToggle(settings.tota11y),
 	)
 }
 
@@ -295,6 +296,28 @@ func renderLandscapeToggle(landscape bool) *hypp.VNode {
 			},
 			hypp.Text("Landscape"),
 		),
+	)
+}
+
+func toggleTota11y(s *state, _ hypp.Payload) hypp.Dispatchable {
+	newState := s.clone()
+	newState.Settings.tota11y = !newState.Settings.tota11y
+	postMessageToIFrame(message[bool]{
+		Type: messageToggleTota11y,
+		Data: newState.Settings.tota11y,
+	})
+	return newState
+}
+
+func renderTota11yToggle(enabled bool) *hypp.VNode {
+	return html.Label(
+		nil,
+		hypp.Text("Tota11y"),
+		html.Input(hypp.HProps{
+			"type":     "checkbox",
+			"checked":  enabled,
+			"onchange": hypp.Action[*state](toggleTota11y),
+		}),
 	)
 }
 
