@@ -94,9 +94,15 @@ func changeTota11y(s *state, payload hypp.Payload) hypp.Dispatchable {
 	newState := s.clone()
 	newState.Settings.tota11y = enabled
 	if !enabled {
-		toolbar := js.Global().Get("document").Call("getElementById", "tota11y-toolbar")
+		document := js.Global().Get("document")
+		toolbar := document.Call("getElementById", "tota11y-toolbar")
 		if !toolbar.IsNull() {
 			toolbar.Get("parentElement").Call("removeChild", toolbar)
+		}
+		elements := document.Call("querySelectorAll", ".tota11y")
+		for i := 0; i < elements.Length(); i++ {
+			element := elements.Index(i)
+			element.Get("parentElement").Call("removeChild", element)
 		}
 	}
 	return newState
