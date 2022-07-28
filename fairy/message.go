@@ -21,6 +21,7 @@ const (
 	messageOperateControl
 	messageTaleEvent
 	messageToggleTota11y
+	messageRefreshApp
 )
 
 type operateControlData[T any] struct {

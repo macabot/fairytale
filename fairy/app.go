@@ -108,6 +108,10 @@ func changeTota11y(s *state, payload hypp.Payload) hypp.Dispatchable {
 	return newState
 }
 
+func refreshApp(s *state, payload hypp.Payload) hypp.Dispatchable {
+	return s.clone()
+}
+
 type messageProps struct {
 	Type         int
 	Dispatchable hypp.Dispatchable
@@ -138,6 +142,16 @@ func onToggleTota11y(dispatchable hypp.Dispatchable) hypp.Subscription {
 		Subscriber: onMessage,
 		Payload: messageProps{
 			Type:         messageToggleTota11y,
+			Dispatchable: dispatchable,
+		},
+	}
+}
+
+func onRefreshApp(dispatchable hypp.Dispatchable) hypp.Subscription {
+	return hypp.Subscription{
+		Subscriber: onMessage,
+		Payload: messageProps{
+			Type:         messageRefreshApp,
 			Dispatchable: dispatchable,
 		},
 	}
@@ -188,6 +202,7 @@ func runApp(s *state) {
 				onSelectTale(hypp.Action[*state](selectTale)),
 				onOperateControl(hypp.Action[*state](operateControl)),
 				onToggleTota11y(hypp.Action[*state](changeTota11y)),
+				onRefreshApp(hypp.Action[*state](refreshApp)),
 			}
 		},
 	})

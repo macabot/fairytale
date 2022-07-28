@@ -255,6 +255,10 @@ func selectIFrameSize(s *state, payload hypp.Payload) hypp.Dispatchable {
 
 	newState := s.clone()
 	newState.Settings.iFrameSize = size
+	postMessageToIFrame(message[struct{}]{
+		Type: messageRefreshApp,
+		Data: struct{}{},
+	})
 	return newState
 }
 
@@ -274,6 +278,10 @@ func renderIFrameSizeSelect(size iFrameSize) *hypp.VNode {
 func toggleLandscape(s *state, _ hypp.Payload) hypp.Dispatchable {
 	newState := s.clone()
 	newState.Settings.landscape = !newState.Settings.landscape
+	postMessageToIFrame(message[struct{}]{
+		Type: messageRefreshApp,
+		Data: struct{}{},
+	})
 	return newState
 }
 
