@@ -178,6 +178,7 @@ func runApp(s *state) {
 					"name":    "viewport",
 					"content": "width=device-width, initial-scale=1.0",
 				}),
+				html.Title(nil, hypp.Text(taleToTitle(currentTale))),
 			)
 			var tota11yScript *hypp.VNode
 			if s.Settings.tota11y {

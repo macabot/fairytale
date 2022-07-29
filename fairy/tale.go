@@ -41,3 +41,10 @@ func (t *Tale) WithControls(controls ...Control) *Tale {
 	t.myControls = controls
 	return t
 }
+
+func taleToTitle(t *Tale) string {
+	if t == nil {
+		return "No tale has been selected"
+	}
+	return "The " + t.name() + " tale"
+}

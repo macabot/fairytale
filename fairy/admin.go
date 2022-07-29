@@ -224,7 +224,7 @@ func renderRightSide(s *state) *hypp.VNode {
 	return html.Div(
 		hypp.HProps{"class": "right-side"},
 		renderSettings(s.Settings),
-		renderIFrame(s.Settings),
+		renderIFrame(s.currentTale(), s.Settings),
 		renderPanel(s),
 	)
 }
@@ -329,14 +329,15 @@ func renderTota11yToggle(enabled bool) *hypp.VNode {
 	)
 }
 
-func renderIFrame(settings adminSettings) *hypp.VNode {
+func renderIFrame(currentTale *Tale, settings adminSettings) *hypp.VNode {
 	size := settings.iFrameSize
 	if settings.landscape {
 		size.Swap()
 	}
 	divProps := hypp.HProps{"class": "current-tale"}
 	iFrameProps := hypp.HProps{
-		"src": "/",
+		"src":   "/",
+		"title": taleToTitle(currentTale),
 	}
 	if size[0] != 0 && size[1] != 0 {
 		divProps["style"] = map[string]string{
