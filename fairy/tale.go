@@ -5,6 +5,17 @@ import (
 	"github.com/macabot/hypp"
 )
 
+type TaleTarget int
+
+const (
+	TaleInsideBody TaleTarget = iota
+	TaleAsBody
+)
+
+type TaleSettings struct {
+	Target TaleTarget
+}
+
 var _ Node = &Tale{}
 
 // Tale is Node that let's you develop and document a component.
@@ -14,6 +25,7 @@ type Tale struct {
 	myState    any
 	myView     func(any) *hypp.VNode
 	myControls []Control
+	mySettings TaleSettings
 }
 
 // NewTale creates a new Tale.
@@ -39,6 +51,10 @@ func (t *Tale) setIsOpen(isOpen bool)     { /* noop */ }
 func (t Tale) view(state any) *hypp.VNode { return t.myView(state) }
 func (t *Tale) WithControls(controls ...Control) *Tale {
 	t.myControls = controls
+	return t
+}
+func (t *Tale) WithSettings(settings TaleSettings) *Tale {
+	t.mySettings = settings
 	return t
 }
 

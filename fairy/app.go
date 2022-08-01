@@ -184,17 +184,27 @@ func runApp(s *state) {
 			if s.Settings.tota11y {
 				tota11yScript = html.Script(hypp.HProps{"src": "https://cdnjs.cloudflare.com/ajax/libs/tota11y/0.1.6/tota11y.min.js"})
 			}
+			currentTaleNode := renderCurrentTale(currentTale)
+			var body *hypp.VNode
+			switch currentTale.mySettings.Target {
+			case TaleInsideBody:
+				body = html.Body(nil, currentTaleNode, tota11yScript)
+			case TaleAsBody:
+				body = hypp.H(
+					currentTaleNode.Tag(),
+					currentTaleNode.Props(),
+					append(currentTaleNode.Children(), tota11yScript)...,
+				)
+			default:
+				panic(fmt.Errorf("invalid target %v", currentTale.mySettings.Target))
+			}
 			return html.Html(
 				nil,
 				html.Head(
 					nil,
 					headChildren...,
 				),
-				html.Body(
-					nil,
-					renderCurrentTale(currentTale),
-					tota11yScript,
-				),
+				body,
 			)
 		},
 		Node: jsd.Node(el),
