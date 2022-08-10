@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
-	"strings"
 	"syscall/js"
 
 	"github.com/macabot/hypp"
@@ -45,24 +44,24 @@ func equalQuery(a, b url.Values) bool {
 	return true
 }
 
-func historyPushState(s *state) {
-	href := getHref(js.Global())
-	stateQuery := s.toQuery()
-	if equalQuery(href.Query(), stateQuery) {
-		return
-	}
-	// Replace %2F with / such that the path query param looks like a path.
-	// E.g. /foo/bar instead of %2Ffoo%2Fbar.
-	href.RawQuery = strings.ReplaceAll(stateQuery.Encode(), "%2F", "/")
-	js.Global().Get("history").Call("pushState", map[string]any{}, "", href.String())
-}
-
 func equalPaths(a, b []int) bool {
 	if len(a) != len(b) {
 		return false
 	}
 	for i, x := range a {
 		if x != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func subPath(full, sub []int) bool {
+	if len(sub) > len(full) {
+		return false
+	}
+	for i, x := range sub {
+		if x != full[i] {
 			return false
 		}
 	}
@@ -122,24 +121,32 @@ func onTaleEvent(dispatchable hypp.Dispatchable) hypp.Subscription {
 	}
 }
 
-func onPopStateAction(query url.Values) hypp.Action[*state] {
+func updateCurrentFromLocation(u *url.URL) hypp.Action[*state] {
 	return func(s *state, _ hypp.Payload) hypp.Dispatchable {
-		newState := updateFromQuery(s, query)
-		newState = selectTaleByPath(s, newState.Current)
+		newState := s.clone()
+		newState.updateCurrentFromURL(u)
+		postMessageToIFrame(message[[]int]{
+			Type: messageSelectTale,
+			Data: newState.Current,
+		})
 		return newState
 	}
 }
 
-func onPopState(jsWindow js.Value) hypp.Subscription {
+func onHashChange() hypp.Subscription {
 	return hypp.Subscription{
 		Subscriber: func(dispatch hypp.Dispatch, _ hypp.Payload) hypp.Unsubscribe {
 			listener := func(_ hypp.Event) {
-				query := getHref(jsWindow).Query()
-				dispatch(onPopStateAction(query), nil)
+				location := js.Global().Get("location").Call("toString").String()
+				u, err := url.Parse(location)
+				if err != nil {
+					panic(err)
+				}
+				dispatch(updateCurrentFromLocation(u), nil)
 			}
-			id := window.AddEventListener("popstate", listener)
+			id := window.AddEventListener("hashchange", listener)
 			return func() {
-				window.RemoveEventListener("popstate", id)
+				window.RemoveEventListener("hashchange", id)
 			}
 		},
 	}
@@ -159,64 +166,48 @@ func pathToKey(p []int) string {
 	return k
 }
 
-func renderNode(n Node, isRoot bool, path []int, current []int) *hypp.VNode {
-	children := make([]*hypp.VNode, len(n.children()))
-	for i, child := range n.children() {
-		childPath := make([]int, len(path)+1)
-		copy(childPath, path)
-		childPath[len(childPath)-1] = i
-		children[i] = renderNode(child, false, childPath, current)
-	}
-	ul := html.Ul(
-		hypp.HProps{
-			"class": map[string]bool{
-				"nested":    !isRoot,
-				"tree-root": isRoot,
-				"active":    n.isOpen(),
-			},
-			"key": pathToKey(path),
-		},
-		children...,
-	)
-	selected := equalPaths(path, current)
-	if isRoot {
-		return ul
-	} else if len(children) == 0 {
-		return html.Li(
+func renderNode(s *state, n Node, path []int, current []int) *hypp.VNode {
+	isSubPath := subPath(current, path)
+
+	children := n.children()
+	if len(children) == 0 {
+		return html.A(
 			hypp.HProps{
+				"href": s.toURL(path).String(),
 				"class": map[string]bool{
-					"tree-tale": true,
-					"selected":  selected,
+					"selected": isSubPath,
 				},
-				"onclick": selectTaleByPathAction(path),
 			},
 			hypp.Text(n.name()),
 		)
 	}
-	return html.Li(
+
+	childNodes := make([]*hypp.VNode, len(children)+1)
+	childNodes[0] = html.Summary(nil, hypp.Text(n.name()))
+	for i, child := range n.children() {
+		childPath := make([]int, len(path)+1)
+		copy(childPath, path)
+		childPath[len(childPath)-1] = i
+		childNodes[i+1] = renderNode(s, child, childPath, current)
+	}
+
+	return html.Details(
 		hypp.HProps{
-			"class": map[string]bool{
-				"selected": selected,
-			},
+			"open": isSubPath,
 		},
-		html.Span(
-			hypp.HProps{
-				"class": map[string]bool{
-					"caret":      true,
-					"caret-down": n.isOpen(),
-				},
-				"onclick": toggleNode(path),
-			},
-			hypp.Text(n.name()),
-		),
-		ul,
+		childNodes...,
 	)
 }
 
-func renderTreeView(tree Node, current []int) *hypp.VNode {
-	return html.Div(
+func renderTreeView(s *state) *hypp.VNode {
+	children := s.Tree.children()
+	childNodes := make([]*hypp.VNode, len(children))
+	for i, child := range children {
+		childNodes[i] = renderNode(s, child, []int{i}, s.Current)
+	}
+	return html.Nav(
 		hypp.HProps{"class": "tree-view"},
-		renderNode(tree, true, nil, current),
+		childNodes...,
 	)
 }
 
@@ -233,18 +224,7 @@ func renderSettings(settings adminSettings) *hypp.VNode {
 	return html.Div(
 		hypp.HProps{"class": "settings"},
 		renderIFrameSizeSelect(settings.iFrameSize),
-		renderLandscapeToggle(settings.landscape),
-		renderTota11yToggle(settings.tota11y),
-	)
-}
-
-func renderIFrameSize(size iFrameSize, selected bool) *hypp.VNode {
-	return html.Option(
-		hypp.HProps{
-			"value":    size.String(),
-			"selected": selected,
-		},
-		hypp.Text(size.String()),
+		renderRotationSelect(settings.rotation),
 	)
 }
 
@@ -262,22 +242,36 @@ func selectIFrameSize(s *state, payload hypp.Payload) hypp.Dispatchable {
 	return newState
 }
 
-func renderIFrameSizeSelect(size iFrameSize) *hypp.VNode {
+func renderIFrameSizeSelect(selectedSize iFrameSize) *hypp.VNode {
 	options := make([]*hypp.VNode, len(iFrameSizes))
-	for i, s := range iFrameSizes {
-		options[i] = renderIFrameSize(s, s.Equal(size))
+	for i, size := range iFrameSizes {
+		options[i] = html.Option(
+			hypp.HProps{
+				"value":    size.String(),
+				"selected": size.Equal(selectedSize),
+			},
+			hypp.Text(size.String()),
+		)
 	}
-	return html.Select(
-		hypp.HProps{
-			"onchange": hypp.Action[*state](selectIFrameSize),
-		},
-		options...,
+	return html.Label(
+		nil,
+		hypp.Text("Size"),
+		html.Select(
+			hypp.HProps{
+				"onchange": hypp.Action[*state](selectIFrameSize),
+			},
+			options...,
+		),
 	)
 }
 
-func toggleLandscape(s *state, _ hypp.Payload) hypp.Dispatchable {
+func selectRotation(s *state, payload hypp.Payload) hypp.Dispatchable {
+	event := payload.(hypp.Event)
+	value := event.Target().Value()
+	rotation := mustRotationFromString(value)
+
 	newState := s.clone()
-	newState.Settings.landscape = !newState.Settings.landscape
+	newState.Settings.rotation = rotation
 	postMessageToIFrame(message[struct{}]{
 		Type: messageRefreshApp,
 		Data: struct{}{},
@@ -285,53 +279,32 @@ func toggleLandscape(s *state, _ hypp.Payload) hypp.Dispatchable {
 	return newState
 }
 
-func renderLandscapeToggle(landscape bool) *hypp.VNode {
-	return html.Select(
-		hypp.HProps{
-			"onchange": hypp.Action[*state](toggleLandscape),
-		},
-		html.Option(
+func renderRotationSelect(selectedRotation rotation) *hypp.VNode {
+	options := make([]*hypp.VNode, len(rotations))
+	for i, rotation := range rotations {
+		options[i] = html.Option(
 			hypp.HProps{
-				"value":    "0",
-				"selected": !landscape,
+				"value":    rotation.String(),
+				"selected": rotation == selectedRotation,
 			},
-			hypp.Text("Portrait"),
-		),
-		html.Option(
-			hypp.HProps{
-				"value":    "1",
-				"selected": landscape,
-			},
-			hypp.Text("Landscape"),
-		),
-	)
-}
-
-func toggleTota11y(s *state, _ hypp.Payload) hypp.Dispatchable {
-	newState := s.clone()
-	newState.Settings.tota11y = !newState.Settings.tota11y
-	postMessageToIFrame(message[bool]{
-		Type: messageToggleTota11y,
-		Data: newState.Settings.tota11y,
-	})
-	return newState
-}
-
-func renderTota11yToggle(enabled bool) *hypp.VNode {
+			hypp.Text(rotation.String()),
+		)
+	}
 	return html.Label(
 		nil,
-		hypp.Text("Tota11y"),
-		html.Input(hypp.HProps{
-			"type":     "checkbox",
-			"checked":  enabled,
-			"onchange": hypp.Action[*state](toggleTota11y),
-		}),
+		hypp.Text("Rotation"),
+		html.Select(
+			hypp.HProps{
+				"onchange": hypp.Action[*state](selectRotation),
+			},
+			options...,
+		),
 	)
 }
 
 func renderIFrame(currentTale *Tale, settings adminSettings) *hypp.VNode {
 	size := settings.iFrameSize
-	if settings.landscape {
+	if settings.rotation == Landscape {
 		size.Swap()
 	}
 	divProps := hypp.HProps{"class": "current-tale"}
@@ -464,26 +437,15 @@ func runAdmin(s *state) {
 		View: func(s *state) *hypp.VNode {
 			return html.Main(
 				nil,
-				renderTreeView(s.Tree, s.Current),
+				renderTreeView(s),
 				renderRightSide(s),
 			)
-		},
-		DispatchWrapper: func(dispatch hypp.Dispatch) hypp.Dispatch {
-			return func(dispatchable hypp.Dispatchable, payload hypp.Payload) {
-				switch v := dispatchable.(type) {
-				case hypp.StateAndEffects[*state]:
-					historyPushState(v.State)
-				case *state:
-					historyPushState(v)
-				}
-				dispatch(dispatchable, payload)
-			}
 		},
 		Node: jsd.Node(el),
 		Subscriptions: func(_ *state) []hypp.Subscription {
 			return []hypp.Subscription{
 				onTaleEvent(hypp.Action[*state](appendTaleEvent)),
-				onPopState(js.Global()),
+				onHashChange(),
 			}
 		},
 	})

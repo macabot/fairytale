@@ -85,29 +85,6 @@ func operateControl(s *state, payload hypp.Payload) hypp.Dispatchable {
 	return s.clone()
 }
 
-func changeTota11y(s *state, payload hypp.Payload) hypp.Dispatchable {
-	raw := payload.(json.RawMessage)
-	var enabled bool
-	if err := json.Unmarshal(raw, &enabled); err != nil {
-		panic(fmt.Errorf("fairy: cannot unmarshal changeTota11y data '%s': %w", string(raw), err))
-	}
-	newState := s.clone()
-	newState.Settings.tota11y = enabled
-	if !enabled {
-		document := js.Global().Get("document")
-		toolbar := document.Call("getElementById", "tota11y-toolbar")
-		if !toolbar.IsNull() {
-			toolbar.Get("parentElement").Call("removeChild", toolbar)
-		}
-		elements := document.Call("querySelectorAll", ".tota11y")
-		for i := 0; i < elements.Length(); i++ {
-			element := elements.Index(i)
-			element.Get("parentElement").Call("removeChild", element)
-		}
-	}
-	return newState
-}
-
 func refreshApp(s *state, payload hypp.Payload) hypp.Dispatchable {
 	return s.clone()
 }
@@ -132,16 +109,6 @@ func onOperateControl(dispatchable hypp.Dispatchable) hypp.Subscription {
 		Subscriber: onMessage,
 		Payload: messageProps{
 			Type:         messageOperateControl,
-			Dispatchable: dispatchable,
-		},
-	}
-}
-
-func onToggleTota11y(dispatchable hypp.Dispatchable) hypp.Subscription {
-	return hypp.Subscription{
-		Subscriber: onMessage,
-		Payload: messageProps{
-			Type:         messageToggleTota11y,
 			Dispatchable: dispatchable,
 		},
 	}
@@ -180,21 +147,17 @@ func runApp(s *state) {
 				}),
 				html.Title(nil, hypp.Text(taleToTitle(currentTale))),
 			)
-			var tota11yScript *hypp.VNode
-			if s.Settings.tota11y {
-				tota11yScript = html.Script(hypp.HProps{"src": "https://cdnjs.cloudflare.com/ajax/libs/tota11y/0.1.6/tota11y.min.js"})
-			}
 			currentTaleNode := renderCurrentTale(currentTale)
+			target := TaleInsideBody
+			if currentTale != nil {
+				target = currentTale.mySettings.Target
+			}
 			var body *hypp.VNode
-			switch currentTale.mySettings.Target {
+			switch target {
 			case TaleInsideBody:
-				body = html.Body(nil, currentTaleNode, tota11yScript)
+				body = html.Body(nil, currentTaleNode)
 			case TaleAsBody:
-				body = hypp.H(
-					currentTaleNode.Tag(),
-					currentTaleNode.Props(),
-					append(currentTaleNode.Children(), tota11yScript)...,
-				)
+				body = currentTaleNode
 			default:
 				panic(fmt.Errorf("invalid target %v", currentTale.mySettings.Target))
 			}
@@ -212,7 +175,6 @@ func runApp(s *state) {
 			return []hypp.Subscription{
 				onSelectTale(hypp.Action[*state](selectTale)),
 				onOperateControl(hypp.Action[*state](operateControl)),
-				onToggleTota11y(hypp.Action[*state](changeTota11y)),
 				onRefreshApp(hypp.Action[*state](refreshApp)),
 			}
 		},

@@ -14,7 +14,7 @@ main {
     display: flex;
 }
 
-/* Colors taken from https://www.schemecolor.com/dreamt-of-a-fairy-tale-color-scheme.php */
+/* Colors based on https://www.schemecolor.com/dreamt-of-a-fairy-tale-color-scheme.php */
 
 .tree-view {
     width: 15%;
@@ -28,7 +28,7 @@ main {
 
 .settings {
     height: 5%;
-    min-height: 3rem;
+    min-height: 4rem;
     background-color: #FAD3BB;
     display: flex;
 }
@@ -47,52 +47,13 @@ iframe {
     border: none;
 }
 
-/* Based on https://www.w3schools.com/howto/howto_js_treeview.asp */
-ul, .tree-root {
-    list-style-type: none;
+.tree-view a {
+    padding-left: 5px;
 }
 
-.tree-root {
-    margin: 0;
-    padding: 0;
-}
-
-.caret {
-    cursor: pointer;
-    -webkit-user-select: none; /* Safari 3.1+ */
-    -moz-user-select: none; /* Firefox 2+ */
-    -ms-user-select: none; /* IE 10+ */
-    user-select: none;
-}
-
-.tree-tale {
-    cursor: pointer;
-    user-select: none;
-}
-
-.tree-tale.selected {
-    background-color: #ED921D;
-}
-
-.caret::before {
-    content: "\25B6";
-    color: black;
-    display: inline-block;
-    margin-right: 6px;
-}
-
-.caret-down::before {
-    -ms-transform: rotate(90deg); /* IE 9 */
-    -webkit-transform: rotate(90deg); /* Safari */
-    transform: rotate(90deg);
-}
-
-.nested {
-    display: none;
-}
-
-.active {
-    display: block;
+.tree-view a.selected {
+    border: 1px solid #ED921D;
+    border-radius: 5px;
 }
 
 .panel {

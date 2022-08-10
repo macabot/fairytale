@@ -20,7 +20,6 @@ const (
 	messageSelectTale = iota + 1
 	messageOperateControl
 	messageTaleEvent
-	messageToggleTota11y
 	messageRefreshApp
 )
 

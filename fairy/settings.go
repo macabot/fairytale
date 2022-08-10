@@ -3,6 +3,8 @@ package fairy
 import (
 	"fmt"
 	"strings"
+
+	"github.com/gosimple/slug"
 )
 
 type iFrameSize [2]int
@@ -37,10 +39,17 @@ func (i iFrameSize) String() string {
 }
 
 func (i iFrameSize) Slug() string {
-	return strings.ReplaceAll(i.String(), " ", "-")
+	return slug.Make(i.String())
 }
 
 func iFrameSizeFromSlug(s string) (iFrameSize, error) {
+	for _, size := range iFrameSizes {
+		if size.Slug() == s {
+			return size, nil
+		}
+	}
+	return [2]int{}, fmt.Errorf("cannot create iFrameSize from slug '%s'", s)
+
 	return iFrameSizeFromString(strings.ReplaceAll(s, "-", " "))
 }
 
@@ -53,18 +62,68 @@ func mustIFrameSizeFromString(s string) iFrameSize {
 }
 
 func iFrameSizeFromString(s string) (iFrameSize, error) {
-	switch s {
-	case "Desktop":
-		return SizeDesktop, nil
-	case "iPhone 11 Pro":
-		return Size_iPhone_11_Pro, nil
-	default:
-		return [2]int{}, fmt.Errorf("cannot convert '%s' to IFrameSize", s)
+	for _, size := range iFrameSizes {
+		if size.String() == s {
+			return size, nil
+		}
 	}
+	return [2]int{}, fmt.Errorf("cannot create iFrameSize from string '%s'", s)
+}
+
+type rotation int
+
+const (
+	Portrait rotation = iota
+	Landscape
+)
+
+var rotations = [...]rotation{
+	Portrait,
+	Landscape,
+}
+
+func (r rotation) String() string {
+	switch r {
+	case Portrait:
+		return "Portrait"
+	case Landscape:
+		return "Landscape"
+	default:
+		panic(fmt.Errorf("unknown rotation: %d", r))
+	}
+}
+
+func rotationFromString(s string) (rotation, error) {
+	for _, rotation := range rotations {
+		if rotation.String() == s {
+			return rotation, nil
+		}
+	}
+	return -1, fmt.Errorf("cannot create rotation from string '%s'", s)
+}
+
+func mustRotationFromString(s string) rotation {
+	rotation, err := rotationFromString(s)
+	if err != nil {
+		panic(err)
+	}
+	return rotation
+}
+
+func (r rotation) Slug() string {
+	return slug.Make(r.String())
+}
+
+func rotationFromSlug(s string) (rotation, error) {
+	for _, rotation := range rotations {
+		if rotation.Slug() == s {
+			return rotation, nil
+		}
+	}
+	return -1, fmt.Errorf("cannot create rotation from slug '%s'", s)
 }
 
 type adminSettings struct {
 	iFrameSize iFrameSize
-	landscape  bool
-	tota11y    bool
+	rotation   rotation
 }
