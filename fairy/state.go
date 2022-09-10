@@ -68,6 +68,9 @@ func (s *state) updateCurrentFromURL(u *url.URL) {
 	if path == "" {
 		path = "/"
 	}
+	if path == "/" {
+		return
+	}
 
 	slugs := strings.Split(path, "/")
 	node := s.Tree
