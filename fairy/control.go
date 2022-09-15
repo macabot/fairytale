@@ -68,7 +68,7 @@ func (s SelectOption[T]) Render(selected bool) *hypp.VNode {
 
 var _ Control = &SelectControl[struct{}, struct{}]{}
 
-// SelectControl is a Control that let's you update the state by selecting one
+// SelectControl is a Control that lets you update the state by selecting one
 // of the available options.
 type SelectControl[S, T any] struct {
 	label         string
@@ -93,7 +93,11 @@ func NewSelectControl[S, T any](
 }
 
 // Render renders the SelectControl as a <select> HTML element.
-func (s SelectControl[S, T]) Render(state any, talePath []int, controlIndex int) *hypp.VNode {
+func (s SelectControl[S, T]) Render(
+	state any,
+	talePath []int,
+	controlIndex int,
+) *hypp.VNode {
 	selectedIndex := s.selectedIndex(state.(S))
 	options := make([]*hypp.VNode, len(s.options))
 	for i, option := range s.options {
@@ -126,7 +130,10 @@ func (s SelectControl[S, T]) UpdateFromEvent(state any, event hypp.Event) any {
 	}
 	return s.update(state.(S), t)
 }
-func (s SelectControl[S, T]) UpdateFromMessage(state any, data json.RawMessage) any {
+func (s SelectControl[S, T]) UpdateFromMessage(
+	state any,
+	data json.RawMessage,
+) any {
 	var t T
 	if err := json.Unmarshal(data, &t); err != nil {
 		panic(fmt.Errorf("fairy: SelectControl cannot JSON unmarshal message data '%s' to type %T: %w", data, t, err))
@@ -136,7 +143,7 @@ func (s SelectControl[S, T]) UpdateFromMessage(state any, data json.RawMessage) 
 
 var _ Control = &CheckboxControl[struct{}]{}
 
-// CheckboxControl is a Control that let's you update the stage by toggling a
+// CheckboxControl is a Control that lets you update the state by toggling a
 // checkbox.
 type CheckboxControl[S any] struct {
 	label   string
@@ -158,7 +165,11 @@ func NewCheckboxControl[S any](
 }
 
 // Render renders the CheckboxControl as a <input type="checkbox"> HTML element.
-func (c CheckboxControl[S]) Render(state any, path []int, controlIndex int) *hypp.VNode {
+func (c CheckboxControl[S]) Render(
+	state any,
+	path []int,
+	controlIndex int,
+) *hypp.VNode {
 	return html.Label(
 		nil,
 		hypp.Text(c.label),
@@ -177,7 +188,10 @@ func (c CheckboxControl[S]) UpdateFromEvent(state any, event hypp.Event) any {
 	checked := event.EscapeToValue().Get("target").Get("checked").Bool()
 	return c.update(state.(S), checked)
 }
-func (c CheckboxControl[S]) UpdateFromMessage(state any, data json.RawMessage) any {
+func (c CheckboxControl[S]) UpdateFromMessage(
+	state any,
+	data json.RawMessage,
+) any {
 	var checked bool
 	if err := json.Unmarshal(data, &checked); err != nil {
 		panic(fmt.Errorf("fairy: CheckboxControl cannot JSON unmarshal data '%s' to type %T: %w", data, checked, err))
@@ -229,7 +243,11 @@ func (n NumberInputControl[S, N]) parseNumber(b []byte) N {
 	return number
 }
 
-func (n NumberInputControl[S, N]) Render(state any, path []int, controlIndex int) *hypp.VNode {
+func (n NumberInputControl[S, N]) Render(
+	state any,
+	path []int,
+	controlIndex int,
+) *hypp.VNode {
 	inputProps := hypp.HProps{
 		"type":  "number",
 		"value": fmt.Sprint(n.value(state.(S))),
@@ -260,13 +278,19 @@ func (n NumberInputControl[S, N]) keepInRange(number N) N {
 	return number
 }
 
-func (n NumberInputControl[S, N]) UpdateFromEvent(state any, event hypp.Event) any {
+func (n NumberInputControl[S, N]) UpdateFromEvent(
+	state any,
+	event hypp.Event,
+) any {
 	number := n.parseNumber([]byte(event.Target().Value()))
 	number = n.keepInRange(number)
 	return n.update(state.(S), number)
 }
 
-func (n NumberInputControl[S, N]) UpdateFromMessage(state any, data json.RawMessage) any {
+func (n NumberInputControl[S, N]) UpdateFromMessage(
+	state any,
+	data json.RawMessage,
+) any {
 	number := n.parseNumber(data)
 	number = n.keepInRange(number)
 	return n.update(state.(S), number)
@@ -330,10 +354,59 @@ func (t TextInputControl[S]) UpdateFromEvent(state any, event hypp.Event) any {
 	return t.update(state.(S), text)
 }
 
-func (t TextInputControl[S]) UpdateFromMessage(state any, data json.RawMessage) any {
+func (t TextInputControl[S]) UpdateFromMessage(
+	state any,
+	data json.RawMessage,
+) any {
 	var text string
 	if err := json.Unmarshal(data, &text); err != nil {
 		panic(fmt.Errorf("fairy: TextInputControl cannot parse '%s' as type %T: %w", data, text, err))
 	}
 	return t.update(state.(S), text)
+}
+
+var _ Control = &ButtonControl[struct{}]{}
+
+// ButtonControl is a Control that lets you update the state by clicking a
+// button.
+type ButtonControl[S any] struct {
+	label  string
+	update func(state S) S
+}
+
+// NewButtonControl creates a new ButtonControl.
+func NewButtonControl[S any](label string, update func(S) S) *ButtonControl[S] {
+	return &ButtonControl[S]{
+		label:  label,
+		update: update,
+	}
+}
+
+// Render renders the ButtonControl as a <button> HTML element.
+func (c ButtonControl[S]) Render(
+	state any,
+	path []int,
+	controlIndex int,
+) *hypp.VNode {
+	return html.Button(
+		hypp.HProps{
+			"type": "button",
+			"onclick": onChangeControl(
+				path,
+				controlIndex,
+				func(_ hypp.Event) struct{} {
+					return struct{}{}
+				},
+			),
+		},
+		hypp.Text(c.label),
+	)
+}
+
+func (c ButtonControl[S]) UpdateFromEvent(state any, _ hypp.Event) any {
+	return c.update(state.(S))
+}
+
+func (c ButtonControl[S]) UpdateFromMessage(state any, _ json.RawMessage) any {
+	return c.update(state.(S))
 }
