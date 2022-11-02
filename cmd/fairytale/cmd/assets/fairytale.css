@@ -1,4 +1,4 @@
-@import "https://unpkg.com/water.css@2.1.1/out/light.min.css";
+@import "/water.css@2.1.1/light.min.css";
 
 html, body, main {
     height: 100%;
