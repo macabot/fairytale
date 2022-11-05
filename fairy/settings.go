@@ -2,7 +2,6 @@ package fairy
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/gosimple/slug"
 )
@@ -40,17 +39,6 @@ func (i iFrameSize) String() string {
 
 func (i iFrameSize) Slug() string {
 	return slug.Make(i.String())
-}
-
-func iFrameSizeFromSlug(s string) (iFrameSize, error) {
-	for _, size := range iFrameSizes {
-		if size.Slug() == s {
-			return size, nil
-		}
-	}
-	return [2]int{}, fmt.Errorf("cannot create iFrameSize from slug '%s'", s)
-
-	return iFrameSizeFromString(strings.ReplaceAll(s, "-", " "))
 }
 
 func mustIFrameSizeFromString(s string) iFrameSize {
