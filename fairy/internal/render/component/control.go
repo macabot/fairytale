@@ -1,47 +1,16 @@
-package fairy
+package component
 
 import (
 	"encoding/json"
 	"fmt"
 	"strconv"
 
+	"github.com/macabot/fairytale/fairy/internal/dispatch"
+	"github.com/macabot/fairytale/fairy/internal/state"
 	"github.com/macabot/hypp"
 	"github.com/macabot/hypp/tag/html"
 	"golang.org/x/exp/constraints"
 )
-
-func onChangeControl[T any](
-	talePath []int,
-	controlIndex int,
-	getEventData func(hypp.Event) T,
-) hypp.Action[*state] {
-	return func(s *state, payload hypp.Payload) hypp.Dispatchable {
-		newState := s.clone()
-		event := payload.(hypp.Event)
-		tale := newState.getTale(talePath)
-		control := tale.myControls[controlIndex]
-		eventData := getEventData(event)
-		// TODO pass eventData instead of event to Update method?
-		tale.myState = control.UpdateFromEvent(tale.myState, event)
-		postMessageToIFrame(message[operateControlData[T]]{
-			Type: messageOperateControl,
-			Data: operateControlData[T]{
-				TalePath:     talePath,
-				ControlIndex: controlIndex,
-				EventData:    eventData,
-			},
-		})
-		return newState
-	}
-}
-
-// Control manages the state of a Tale. Typically, a Control manages a single
-// property of the state, however a Control can change the whole state.
-type Control interface {
-	Render(state any, talePath []int, controlIndex int) *hypp.VNode
-	UpdateFromEvent(state any, event hypp.Event) any
-	UpdateFromMessage(state any, data json.RawMessage) any
-}
 
 // SelectOption represents a possible option for a SelectControl.
 type SelectOption[T any] struct {
@@ -66,7 +35,7 @@ func (s SelectOption[T]) Render(selected bool) *hypp.VNode {
 	)
 }
 
-var _ Control = &SelectControl[struct{}, struct{}]{}
+var _ state.Control = &SelectControl[struct{}, struct{}]{}
 
 // SelectControl is a Control that lets you update the state by selecting one
 // of the available options.
@@ -114,7 +83,7 @@ func (s SelectControl[S, T]) Render(
 		hypp.Text(s.label),
 		html.Select(
 			hypp.HProps{
-				"onchange": onChangeControl(talePath, controlIndex, func(event hypp.Event) json.RawMessage {
+				"onchange": dispatch.OnChangeControl(talePath, controlIndex, func(event hypp.Event) json.RawMessage {
 					return []byte(event.Target().Value())
 				}),
 			},
@@ -141,7 +110,7 @@ func (s SelectControl[S, T]) UpdateFromMessage(
 	return s.update(state.(S), t)
 }
 
-var _ Control = &CheckboxControl[struct{}]{}
+var _ state.Control = &CheckboxControl[struct{}]{}
 
 // CheckboxControl is a Control that lets you update the state by toggling a
 // checkbox.
@@ -177,7 +146,7 @@ func (c CheckboxControl[S]) Render(
 			hypp.HProps{
 				"type":    "checkbox",
 				"checked": c.checked(state.(S)),
-				"onchange": onChangeControl(path, controlIndex, func(event hypp.Event) bool {
+				"onchange": dispatch.OnChangeControl(path, controlIndex, func(event hypp.Event) bool {
 					return event.EscapeToValue().Get("target").Get("checked").Bool()
 				}),
 			},
@@ -199,7 +168,7 @@ func (c CheckboxControl[S]) UpdateFromMessage(
 	return c.update(state.(S), checked)
 }
 
-var _ Control = &NumberInputControl[struct{}, float64]{}
+var _ state.Control = &NumberInputControl[struct{}, float64]{}
 
 type Number interface {
 	constraints.Integer | constraints.Float
@@ -251,7 +220,7 @@ func (n NumberInputControl[S, N]) Render(
 	inputProps := hypp.HProps{
 		"type":  "number",
 		"value": fmt.Sprint(n.value(state.(S))),
-		"onchange": onChangeControl(path, controlIndex, func(event hypp.Event) N {
+		"onchange": dispatch.OnChangeControl(path, controlIndex, func(event hypp.Event) N {
 			return n.parseNumber([]byte(event.Target().Value()))
 		}),
 	}
@@ -296,7 +265,7 @@ func (n NumberInputControl[S, N]) UpdateFromMessage(
 	return n.update(state.(S), number)
 }
 
-var _ Control = &TextInputControl[struct{}]{}
+var _ state.Control = &TextInputControl[struct{}]{}
 
 type TextInputControl[S any] struct {
 	label     string
@@ -332,7 +301,7 @@ func (t TextInputControl[S]) Render(state any, path []int, controlIndex int) *hy
 	inputProps := hypp.HProps{
 		"type":  "text",
 		"value": t.value(state.(S)),
-		"oninput": onChangeControl(path, controlIndex, func(event hypp.Event) string {
+		"oninput": dispatch.OnChangeControl(path, controlIndex, func(event hypp.Event) string {
 			return event.Target().Value()
 		}),
 	}
@@ -365,7 +334,7 @@ func (t TextInputControl[S]) UpdateFromMessage(
 	return t.update(state.(S), text)
 }
 
-var _ Control = &ButtonControl[struct{}]{}
+var _ state.Control = &ButtonControl[struct{}]{}
 
 // ButtonControl is a Control that lets you update the state by clicking a
 // button.
@@ -391,7 +360,7 @@ func (c ButtonControl[S]) Render(
 	return html.Button(
 		hypp.HProps{
 			"type": "button",
-			"onclick": onChangeControl(
+			"onclick": dispatch.OnChangeControl(
 				path,
 				controlIndex,
 				func(_ hypp.Event) struct{} {

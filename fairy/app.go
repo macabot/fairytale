@@ -1,25 +1,15 @@
 package fairy
 
 import (
-	"encoding/json"
 	"fmt"
 	"syscall/js"
 
+	"github.com/macabot/fairytale/fairy/internal/dispatch"
+	"github.com/macabot/fairytale/fairy/internal/state"
 	"github.com/macabot/hypp"
 	jsd "github.com/macabot/hypp/driver/js"
 	"github.com/macabot/hypp/tag/html"
 )
-
-func triggerTaleEvent(key string) hypp.Action[*state] {
-	return func(s *state, payload hypp.Payload) hypp.Dispatchable {
-		event := payload.(hypp.Event)
-		postMessageToTopFrame(message[taleEvent]{
-			Type: messageTaleEvent,
-			Data: taleEvent{Key: key, Event: event},
-		})
-		return s
-	}
-}
 
 func replaceEventHandlers(vNode *hypp.VNode) *hypp.VNode {
 	if vNode == nil {
@@ -34,7 +24,7 @@ func replaceEventHandlers(vNode *hypp.VNode) *hypp.VNode {
 	}
 	for key := range props {
 		if key[0] == 'o' && key[1] == 'n' {
-			props[key] = triggerTaleEvent(key)
+			props[key] = dispatch.TriggerTaleEvent(key)
 		}
 	}
 	children := vNode.Children()
@@ -49,44 +39,14 @@ func replaceEventHandlers(vNode *hypp.VNode) *hypp.VNode {
 	)
 }
 
-func renderCurrentTale(tale *Tale) *hypp.VNode {
+func renderCurrentTale(tale *state.Tale) *hypp.VNode {
 	var content *hypp.VNode
 	if tale == nil {
 		content = hypp.Text("Select a tale")
 	} else {
-		content = replaceEventHandlers(tale.view(tale.myState))
+		content = replaceEventHandlers(tale.View(tale.State()))
 	}
 	return content
-}
-
-func selectTale(s *state, payload hypp.Payload) hypp.Dispatchable {
-	raw := payload.(json.RawMessage)
-	var path []int
-	if err := json.Unmarshal(raw, &path); err != nil {
-		panic(fmt.Errorf("fairy: cannot unmarshal selectTale data '%s': %w", string(raw), err))
-	}
-	if equalPaths(path, s.Current) {
-		return s
-	}
-	newState := s.clone()
-	newState.Current = path
-	return newState
-}
-
-func operateControl(s *state, payload hypp.Payload) hypp.Dispatchable {
-	raw := payload.(json.RawMessage)
-	var data operateControlData[json.RawMessage]
-	if err := json.Unmarshal(raw, &data); err != nil {
-		panic(fmt.Errorf("fairy: cannot unmarshal operateControl data '%s': %w", string(raw), err))
-	}
-	tale := s.getTale(data.TalePath)
-	control := tale.myControls[data.ControlIndex]
-	tale.myState = control.UpdateFromMessage(tale.myState, data.EventData)
-	return s.clone()
-}
-
-func refreshApp(s *state, payload hypp.Payload) hypp.Dispatchable {
-	return s.clone()
 }
 
 type messageProps struct {
@@ -94,47 +54,17 @@ type messageProps struct {
 	Dispatchable hypp.Dispatchable
 }
 
-func onSelectTale(dispatchable hypp.Dispatchable) hypp.Subscription {
-	return hypp.Subscription{
-		Subscriber: onMessage,
-		Payload: messageProps{
-			Type:         messageSelectTale,
-			Dispatchable: dispatchable,
-		},
-	}
-}
-
-func onOperateControl(dispatchable hypp.Dispatchable) hypp.Subscription {
-	return hypp.Subscription{
-		Subscriber: onMessage,
-		Payload: messageProps{
-			Type:         messageOperateControl,
-			Dispatchable: dispatchable,
-		},
-	}
-}
-
-func onRefreshApp(dispatchable hypp.Dispatchable) hypp.Subscription {
-	return hypp.Subscription{
-		Subscriber: onMessage,
-		Payload: messageProps{
-			Type:         messageRefreshApp,
-			Dispatchable: dispatchable,
-		},
-	}
-}
-
-func runApp(s *state) {
+func runApp(s *state.State) {
 	el := js.Global().Get("document").Call("querySelector", "html")
 	if el.IsNull() {
 		panic("Could not find <html> element.")
 	}
-	hypp.App(hypp.AppProps[*state]{
+	hypp.App(hypp.AppProps[*state.State]{
 		Driver: jsd.Driver{},
 		Init:   s,
-		View: func(s *state) *hypp.VNode {
+		View: func(s *state.State) *hypp.VNode {
 			var assets []*hypp.VNode
-			currentTale := s.getTale(s.Current)
+			currentTale := s.GetTale(s.Current)
 			if currentTale != nil {
 				assets = s.Assets
 			}
@@ -145,21 +75,21 @@ func runApp(s *state) {
 					"name":    "viewport",
 					"content": "width=device-width, initial-scale=1.0",
 				}),
-				html.Title(nil, hypp.Text(taleToTitle(currentTale))),
+				html.Title(nil, hypp.Text(state.TaleToTitle(currentTale))),
 			)
 			currentTaleNode := renderCurrentTale(currentTale)
-			target := TaleInsideBody
+			target := state.TaleInsideBody
 			if currentTale != nil {
-				target = currentTale.mySettings.Target
+				target = currentTale.Settings().Target
 			}
 			var body *hypp.VNode
 			switch target {
-			case TaleInsideBody:
+			case state.TaleInsideBody:
 				body = html.Body(nil, currentTaleNode)
-			case TaleAsBody:
+			case state.TaleAsBody:
 				body = currentTaleNode
 			default:
-				panic(fmt.Errorf("invalid target %v", currentTale.mySettings.Target))
+				panic(fmt.Errorf("invalid target %v", currentTale.Settings().Target))
 			}
 			return html.Html(
 				nil,
@@ -171,11 +101,11 @@ func runApp(s *state) {
 			)
 		},
 		Node: jsd.Node(el),
-		Subscriptions: func(_ *state) []hypp.Subscription {
+		Subscriptions: func(_ *state.State) []hypp.Subscription {
 			return []hypp.Subscription{
-				onSelectTale(hypp.Action[*state](selectTale)),
-				onOperateControl(hypp.Action[*state](operateControl)),
-				onRefreshApp(hypp.Action[*state](refreshApp)),
+				dispatch.OnSelectTale(hypp.Action[*state.State](dispatch.SelectTale)),
+				dispatch.OnOperateControl(hypp.Action[*state.State](dispatch.OperateControl)),
+				dispatch.OnRefreshApp(hypp.Action[*state.State](dispatch.RefreshApp)),
 			}
 		},
 	})

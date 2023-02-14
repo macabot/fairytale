@@ -1,15 +1,15 @@
-package fairy
+package state
 
 import "github.com/gosimple/slug"
 
 // Node in the navigation tree.
 type Node interface {
-	name() string
-	slug() string
-	children() []Node
-	tale() *Tale
-	isOpen() bool
-	setIsOpen(bool)
+	Name() string
+	Slug() string
+	Children() []Node
+	Tale() *Tale
+	IsOpen() bool
+	SetIsOpen(bool)
 }
 
 var _ Node = &Branch{}
@@ -23,12 +23,12 @@ type Branch struct {
 	myIsOpen   bool
 }
 
-func (b Branch) name() string           { return b.myName }
-func (b Branch) slug() string           { return b.mySlug }
-func (b Branch) children() []Node       { return b.myChildren }
-func (b Branch) tale() *Tale            { return b.myTale }
-func (b Branch) isOpen() bool           { return b.myIsOpen }
-func (b *Branch) setIsOpen(isOpen bool) { b.myIsOpen = isOpen }
+func (b Branch) Name() string           { return b.myName }
+func (b Branch) Slug() string           { return b.mySlug }
+func (b Branch) Children() []Node       { return b.myChildren }
+func (b Branch) Tale() *Tale            { return b.myTale }
+func (b Branch) IsOpen() bool           { return b.myIsOpen }
+func (b *Branch) SetIsOpen(isOpen bool) { b.myIsOpen = isOpen }
 
 // NewTree creates a new navigation tree. The returned Node is the root of the
 // tree.

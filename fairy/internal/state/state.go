@@ -1,34 +1,35 @@
-package fairy
+package state
 
 import (
 	"net/url"
 	"strings"
 
+	"github.com/macabot/fairytale/fairy/internal/console"
 	"github.com/macabot/hypp"
 )
 
-type state struct {
+type State struct {
 	hypp.EmptyState
 	Tree             Node
 	Current          []int
-	Settings         adminSettings
+	Settings         AdminSettings
 	Assets           []*hypp.VNode
-	TaleEvents       []taleEvent
+	TaleEvents       []TaleEvent
 	SelectedPanelTab int
 }
 
-func (s state) getTale(path []int) *Tale {
+func (s State) GetTale(path []int) *Tale {
 	node := s.Tree
 	for _, i := range path {
-		node = node.children()[i]
+		node = node.Children()[i]
 	}
-	return node.tale()
+	return node.Tale()
 }
 
-func (s state) hasTale(path []int) bool {
+func (s State) hasTale(path []int) bool {
 	node := s.Tree
 	for _, i := range path {
-		children := node.children()
+		children := node.Children()
 		if i < 0 || i >= len(children) {
 			return false
 		}
@@ -37,15 +38,15 @@ func (s state) hasTale(path []int) bool {
 	return true
 }
 
-func (s state) currentTale() *Tale {
-	return s.getTale(s.Current)
+func (s State) CurrentTale() *Tale {
+	return s.GetTale(s.Current)
 }
 
-func (s state) clone() *state {
+func (s State) Clone() *State {
 	return &s
 }
 
-func (s state) toURL(forceCurrent []int) *url.URL {
+func (s State) ToURL(forceCurrent []int) *url.URL {
 	current := s.Current
 	if forceCurrent != nil {
 		current = forceCurrent
@@ -53,8 +54,8 @@ func (s state) toURL(forceCurrent []int) *url.URL {
 	slugs := make([]string, len(current))
 	node := s.Tree
 	for i, pathI := range current {
-		node = node.children()[pathI]
-		slugs[i] = node.slug()
+		node = node.Children()[pathI]
+		slugs[i] = node.Slug()
 	}
 	path := "/" + strings.Join(slugs, "/")
 
@@ -63,7 +64,7 @@ func (s state) toURL(forceCurrent []int) *url.URL {
 	}
 }
 
-func (s *state) updateCurrentFromURL(u *url.URL) {
+func (s *State) UpdateCurrentFromURL(u *url.URL) {
 	path := u.Fragment
 	if path == "" {
 		path = "/"
@@ -79,9 +80,9 @@ func (s *state) updateCurrentFromURL(u *url.URL) {
 	found := false
 	for i := 1; i < len(slugs); i++ {
 		found = false
-		children := node.children()
+		children := node.Children()
 		for pathI, child := range children {
-			if child.slug() == slugs[i] {
+			if child.Slug() == slugs[i] {
 				current[i-1] = pathI
 				node = child
 				found = true
@@ -93,13 +94,13 @@ func (s *state) updateCurrentFromURL(u *url.URL) {
 		}
 	}
 	if !found {
-		consoleWarn("Could not find tale for 'path' in URL fragment.")
+		console.Warn("Could not find tale for 'path' in URL fragment.")
 	} else {
 		s.Current = current
 		node := s.Tree
 		for _, pathI := range current {
-			node = node.children()[pathI]
-			node.setIsOpen(true)
+			node = node.Children()[pathI]
+			node.SetIsOpen(true)
 		}
 	}
 }

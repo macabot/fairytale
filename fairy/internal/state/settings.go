@@ -1,4 +1,4 @@
-package fairy
+package state
 
 import (
 	"fmt"
@@ -6,27 +6,27 @@ import (
 	"github.com/gosimple/slug"
 )
 
-type iFrameSize [2]int
+type IFrameSize [2]int
 
 var (
-	SizeDesktop        = iFrameSize{0, 0}
-	Size_iPhone_11_Pro = iFrameSize{375, 812}
+	SizeDesktop        = IFrameSize{0, 0}
+	Size_iPhone_11_Pro = IFrameSize{375, 812}
 )
 
-var iFrameSizes = [...]iFrameSize{
+var IFrameSizes = [...]IFrameSize{
 	SizeDesktop,
 	Size_iPhone_11_Pro,
 }
 
-func (i *iFrameSize) Swap() {
+func (i *IFrameSize) Swap() {
 	i[0], i[1] = i[1], i[0]
 }
 
-func (i iFrameSize) Equal(other iFrameSize) bool {
+func (i IFrameSize) Equal(other IFrameSize) bool {
 	return i[0] == other[0] && i[1] == other[1]
 }
 
-func (i iFrameSize) String() string {
+func (i IFrameSize) String() string {
 	switch i {
 	case SizeDesktop:
 		return "Desktop"
@@ -37,11 +37,11 @@ func (i iFrameSize) String() string {
 	}
 }
 
-func (i iFrameSize) Slug() string {
+func (i IFrameSize) Slug() string {
 	return slug.Make(i.String())
 }
 
-func mustIFrameSizeFromString(s string) iFrameSize {
+func MustIFrameSizeFromString(s string) IFrameSize {
 	size, err := iFrameSizeFromString(s)
 	if err != nil {
 		panic(err)
@@ -49,8 +49,8 @@ func mustIFrameSizeFromString(s string) iFrameSize {
 	return size
 }
 
-func iFrameSizeFromString(s string) (iFrameSize, error) {
-	for _, size := range iFrameSizes {
+func iFrameSizeFromString(s string) (IFrameSize, error) {
+	for _, size := range IFrameSizes {
 		if size.String() == s {
 			return size, nil
 		}
@@ -58,19 +58,19 @@ func iFrameSizeFromString(s string) (iFrameSize, error) {
 	return [2]int{}, fmt.Errorf("cannot create iFrameSize from string '%s'", s)
 }
 
-type rotation int
+type Rotation int
 
 const (
-	Portrait rotation = iota
+	Portrait Rotation = iota
 	Landscape
 )
 
-var rotations = [...]rotation{
+var Rotations = [...]Rotation{
 	Portrait,
 	Landscape,
 }
 
-func (r rotation) String() string {
+func (r Rotation) String() string {
 	switch r {
 	case Portrait:
 		return "Portrait"
@@ -81,8 +81,8 @@ func (r rotation) String() string {
 	}
 }
 
-func rotationFromString(s string) (rotation, error) {
-	for _, rotation := range rotations {
+func rotationFromString(s string) (Rotation, error) {
+	for _, rotation := range Rotations {
 		if rotation.String() == s {
 			return rotation, nil
 		}
@@ -90,7 +90,7 @@ func rotationFromString(s string) (rotation, error) {
 	return -1, fmt.Errorf("cannot create rotation from string '%s'", s)
 }
 
-func mustRotationFromString(s string) rotation {
+func MustRotationFromString(s string) Rotation {
 	rotation, err := rotationFromString(s)
 	if err != nil {
 		panic(err)
@@ -98,12 +98,12 @@ func mustRotationFromString(s string) rotation {
 	return rotation
 }
 
-func (r rotation) Slug() string {
+func (r Rotation) Slug() string {
 	return slug.Make(r.String())
 }
 
-func rotationFromSlug(s string) (rotation, error) {
-	for _, rotation := range rotations {
+func rotationFromSlug(s string) (Rotation, error) {
+	for _, rotation := range Rotations {
 		if rotation.Slug() == s {
 			return rotation, nil
 		}
@@ -111,7 +111,7 @@ func rotationFromSlug(s string) (rotation, error) {
 	return -1, fmt.Errorf("cannot create rotation from slug '%s'", s)
 }
 
-type adminSettings struct {
-	iFrameSize iFrameSize
-	rotation   rotation
+type AdminSettings struct {
+	IFrameSize IFrameSize
+	Rotation   Rotation
 }
