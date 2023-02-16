@@ -16,34 +16,34 @@ var _ Node = &Branch{}
 
 // Branch is a Node that has at least 1 child node.
 type Branch struct {
-	myName     string
-	mySlug     string
-	myChildren []Node
-	myTale     *Tale
-	myIsOpen   bool
+	name     string
+	slug     string
+	children []Node
+	tale     *Tale
+	isOpen   bool
 }
 
-func (b Branch) Name() string           { return b.myName }
-func (b Branch) Slug() string           { return b.mySlug }
-func (b Branch) Children() []Node       { return b.myChildren }
-func (b Branch) Tale() *Tale            { return b.myTale }
-func (b Branch) IsOpen() bool           { return b.myIsOpen }
-func (b *Branch) SetIsOpen(isOpen bool) { b.myIsOpen = isOpen }
+func (b Branch) Name() string           { return b.name }
+func (b Branch) Slug() string           { return b.slug }
+func (b Branch) Children() []Node       { return b.children }
+func (b Branch) Tale() *Tale            { return b.tale }
+func (b Branch) IsOpen() bool           { return b.isOpen }
+func (b *Branch) SetIsOpen(isOpen bool) { b.isOpen = isOpen }
 
 // NewTree creates a new navigation tree. The returned Node is the root of the
 // tree.
-func NewTree(children ...Node) Node {
+func NewTree(children ...Node) *Branch {
 	return &Branch{
-		myChildren: children,
-		myIsOpen:   true,
+		children: children,
+		isOpen:   true,
 	}
 }
 
 // NewBranch creates a new Branch.
-func NewBranch(name string, children ...Node) Node {
+func NewBranch(name string, children ...Node) *Branch {
 	return &Branch{
-		myName:     name,
-		mySlug:     slug.Make(name),
-		myChildren: children,
+		name:     name,
+		slug:     slug.Make(name),
+		children: children,
 	}
 }

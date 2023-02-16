@@ -30,12 +30,12 @@ type Control interface {
 
 // Tale is Node that let's you develop and document a component.
 type Tale struct {
-	myName     string
-	mySlug     string
-	myState    any
-	myView     func(any) *hypp.VNode
-	myControls []Control
-	mySettings TaleSettings
+	name     string
+	slug     string
+	state    any
+	view     func(any) *hypp.VNode
+	controls []Control
+	settings TaleSettings
 }
 
 // NewTale creates a new Tale.
@@ -45,39 +45,39 @@ func NewTale[S any](
 	view func(S) *hypp.VNode,
 ) *Tale {
 	return &Tale{
-		myName:  name,
-		mySlug:  slug.Make(name),
-		myState: state,
-		myView:  func(state any) *hypp.VNode { return view(state.(S)) },
+		name:  name,
+		slug:  slug.Make(name),
+		state: state,
+		view:  func(state any) *hypp.VNode { return view(state.(S)) },
 	}
 }
 
-func (t Tale) Name() string               { return t.myName }
-func (t Tale) Slug() string               { return t.mySlug }
+func (t Tale) Name() string               { return t.name }
+func (t Tale) Slug() string               { return t.slug }
 func (t Tale) Children() []Node           { return nil }
 func (t *Tale) Tale() *Tale               { return t }
 func (t Tale) IsOpen() bool               { return false }
 func (t *Tale) SetIsOpen(isOpen bool)     { /* noop */ }
-func (t Tale) View(state any) *hypp.VNode { return t.myView(state) }
+func (t Tale) View(state any) *hypp.VNode { return t.view(state) }
 func (t Tale) Controls() []Control {
-	return t.myControls
+	return t.controls
 }
 func (t Tale) State() any {
 	return t
 }
 func (t *Tale) SetState(s any) {
-	t.myState = s
+	t.state = s
 }
 func (t *Tale) WithControls(controls ...Control) *Tale {
-	t.myControls = controls
+	t.controls = controls
 	return t
 }
 func (t *Tale) WithSettings(settings TaleSettings) *Tale {
-	t.mySettings = settings
+	t.settings = settings
 	return t
 }
 func (t Tale) Settings() TaleSettings {
-	return t.mySettings
+	return t.settings
 }
 
 func TaleToTitle(t *Tale) string {

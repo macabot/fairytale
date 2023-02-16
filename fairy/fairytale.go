@@ -1,10 +1,9 @@
-package fairytale
+package fairy
 
 import (
 	"net/url"
 	"syscall/js"
 
-	"github.com/macabot/fairytale/fairy"
 	"github.com/macabot/fairytale/internal/dispatch"
 	"github.com/macabot/fairytale/internal/render/page"
 	"github.com/macabot/fairytale/internal/state"
@@ -13,10 +12,10 @@ import (
 )
 
 // Run the Fairy Tale.
-func Run(tree fairy.Node, assets []*hypp.VNode) {
+func Run(tree Node, assets []*hypp.VNode) {
 	top := js.Global().Get("top")
 	inTopFrame := js.Global().Get("self").Equal(top)
-	s := &state.State{Tree: tree, Assets: assets}
+	s := &state.State{Tree: tree.node(), Assets: assets}
 	href := getHref(top)
 	s.UpdateCurrentFromURL(href)
 	if inTopFrame {

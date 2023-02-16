@@ -9,7 +9,7 @@ func OnRefreshApp(dispatchable hypp.Dispatchable) hypp.Subscription {
 	return hypp.Subscription{
 		Subscriber: onMessage,
 		Payload: messageProps{
-			Type:         state.MessageRefreshApp,
+			Type:         messageRefreshApp,
 			Dispatchable: dispatchable,
 		},
 	}
