@@ -52,7 +52,7 @@ type Tale[S any] struct {
 
 func NewTale[S any](name string, s S, view func(S) *hypp.VNode) *Tale[S] {
 	return &Tale[S]{
-		tale: state.NewTale[S](name, s, view),
+		tale: state.NewTale(name, s, view),
 	}
 }
 
