@@ -117,7 +117,7 @@ func NewTextInputControl[S any](
 	value func(state S) string,
 ) *TextInputControl[S] {
 	return &TextInputControl[S]{
-		textInputControl: component.NewTextInputControl[S](label, update, value),
+		textInputControl: component.NewTextInputControl(label, update, value),
 	}
 }
 
@@ -146,7 +146,7 @@ type ButtonControl[S any] struct {
 // NewButtonControl creates a new ButtonControl.
 func NewButtonControl[S any](label string, update func(S) S) *ButtonControl[S] {
 	return &ButtonControl[S]{
-		buttonControl: component.NewButtonControl[S](label, update),
+		buttonControl: component.NewButtonControl(label, update),
 	}
 }
 
