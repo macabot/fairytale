@@ -1,6 +1,8 @@
 package dispatch
 
 import (
+	"fmt"
+
 	"github.com/macabot/fairytale"
 	"github.com/macabot/hypp"
 )
@@ -8,7 +10,7 @@ import (
 func SelectIFrameSize(s *fairytale.State, payload hypp.Payload) hypp.Dispatchable {
 	event := payload.(hypp.Event)
 	value := event.Target().Value()
-	size := fairytale.MustIFrameSizeFromString(value)
+	size := mustIFrameSizeFromString(value)
 
 	newState := s.Clone()
 	newState.Settings.IFrameSize = size
@@ -17,4 +19,21 @@ func SelectIFrameSize(s *fairytale.State, payload hypp.Payload) hypp.Dispatchabl
 		Data: struct{}{},
 	})
 	return newState
+}
+
+func mustIFrameSizeFromString(s string) fairytale.IFrameSize {
+	size, err := iFrameSizeFromString(s)
+	if err != nil {
+		panic(err)
+	}
+	return size
+}
+
+func iFrameSizeFromString(s string) (fairytale.IFrameSize, error) {
+	for _, size := range fairytale.IFrameSizes {
+		if size.String() == s {
+			return size, nil
+		}
+	}
+	return [2]int{}, fmt.Errorf("cannot create iFrameSize from string '%s'", s)
 }

@@ -41,23 +41,6 @@ func (i IFrameSize) Slug() string {
 	return slug.Make(i.String())
 }
 
-func MustIFrameSizeFromString(s string) IFrameSize {
-	size, err := iFrameSizeFromString(s)
-	if err != nil {
-		panic(err)
-	}
-	return size
-}
-
-func iFrameSizeFromString(s string) (IFrameSize, error) {
-	for _, size := range IFrameSizes {
-		if size.String() == s {
-			return size, nil
-		}
-	}
-	return [2]int{}, fmt.Errorf("cannot create iFrameSize from string '%s'", s)
-}
-
 type Rotation int
 
 const (
@@ -79,23 +62,6 @@ func (r Rotation) String() string {
 	default:
 		panic(fmt.Errorf("unknown rotation: %d", r))
 	}
-}
-
-func rotationFromString(s string) (Rotation, error) {
-	for _, rotation := range Rotations {
-		if rotation.String() == s {
-			return rotation, nil
-		}
-	}
-	return -1, fmt.Errorf("cannot create rotation from string '%s'", s)
-}
-
-func MustRotationFromString(s string) Rotation {
-	rotation, err := rotationFromString(s)
-	if err != nil {
-		panic(err)
-	}
-	return rotation
 }
 
 func (r Rotation) Slug() string {
