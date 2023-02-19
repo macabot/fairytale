@@ -1,12 +1,12 @@
 package component
 
 import (
-	"github.com/macabot/fairytale/internal/state"
+	"github.com/macabot/fairytale"
 	"github.com/macabot/hypp"
 	"github.com/macabot/hypp/tag/html"
 )
 
-func Controls(s *state.State) *hypp.VNode {
+func Controls(s *fairytale.State) *hypp.VNode {
 	tale := s.CurrentTale()
 	var controls []*hypp.VNode
 	if tale == nil {

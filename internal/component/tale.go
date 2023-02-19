@@ -1,17 +1,17 @@
 package component
 
 import (
+	"github.com/macabot/fairytale"
 	"github.com/macabot/fairytale/internal/dispatch"
-	"github.com/macabot/fairytale/internal/state"
 	"github.com/macabot/hypp"
 )
 
-func CurrentTale(tale *state.Tale) *hypp.VNode {
+func CurrentTale(tale *fairytale.Tale) *hypp.VNode {
 	var content *hypp.VNode
 	if tale == nil {
 		content = hypp.Text("Select a tale")
 	} else {
-		content = replaceEventHandlers(tale.View(tale.State()))
+		content = replaceEventHandlers(tale.View())
 	}
 	return content
 }
@@ -42,4 +42,11 @@ func replaceEventHandlers(vNode *hypp.VNode) *hypp.VNode {
 		props,
 		newChildren...,
 	)
+}
+
+func taleToTitle(t *fairytale.Tale) string {
+	if t == nil {
+		return "No tale has been selected"
+	}
+	return "The " + t.Name() + " tale"
 }

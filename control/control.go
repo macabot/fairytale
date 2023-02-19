@@ -1,18 +1,18 @@
-package component
+package control
 
 import (
 	"encoding/json"
 	"fmt"
 	"strconv"
 
+	"github.com/macabot/fairytale"
 	"github.com/macabot/fairytale/internal/dispatch"
-	"github.com/macabot/fairytale/internal/state"
 	"github.com/macabot/hypp"
 	"github.com/macabot/hypp/tag/html"
 	"golang.org/x/exp/constraints"
 )
 
-// SelectOption represents a possible option for a SelectControl.
+// SelectOption represents a possible option for a Select.
 type SelectOption[T any] struct {
 	Label    string
 	Value    T
@@ -35,25 +35,25 @@ func (s SelectOption[T]) Render(selected bool) *hypp.VNode {
 	)
 }
 
-var _ state.Control = &SelectControl[struct{}, struct{}]{}
+var _ fairytale.Control = &Select[struct{}, struct{}]{}
 
-// SelectControl is a Control that lets you update the state by selecting one
+// Select is a Control that lets you update the state by selecting one
 // of the available options.
-type SelectControl[S, T any] struct {
+type Select[S, T any] struct {
 	label         string
 	update        func(S, T) S
 	selectedIndex func(S) int
 	options       []SelectOption[T]
 }
 
-// NewSelectControl creates a new SelectControl.
-func NewSelectControl[S, T any](
+// NewSelect creates a new Select.
+func NewSelect[S, T any](
 	label string,
 	update func(S, T) S,
 	selectedIndex func(S) int,
 	options []SelectOption[T],
-) *SelectControl[S, T] {
-	return &SelectControl[S, T]{
+) *Select[S, T] {
+	return &Select[S, T]{
 		label:         label,
 		update:        update,
 		selectedIndex: selectedIndex,
@@ -61,8 +61,8 @@ func NewSelectControl[S, T any](
 	}
 }
 
-// Render renders the SelectControl as a <select> HTML element.
-func (s SelectControl[S, T]) Render(
+// Render renders the Select as a <select> HTML element.
+func (s Select[S, T]) Render(
 	state any,
 	talePath []int,
 	controlIndex int,
@@ -91,7 +91,7 @@ func (s SelectControl[S, T]) Render(
 		),
 	)
 }
-func (s SelectControl[S, T]) UpdateFromEvent(state any, event hypp.Event) any {
+func (s Select[S, T]) UpdateFromEvent(state any, event hypp.Event) any {
 	value := event.Target().Value()
 	var t T
 	if err := json.Unmarshal([]byte(value), &t); err != nil {
@@ -99,7 +99,7 @@ func (s SelectControl[S, T]) UpdateFromEvent(state any, event hypp.Event) any {
 	}
 	return s.update(state.(S), t)
 }
-func (s SelectControl[S, T]) UpdateFromMessage(
+func (s Select[S, T]) UpdateFromMessage(
 	state any,
 	data json.RawMessage,
 ) any {
@@ -110,31 +110,31 @@ func (s SelectControl[S, T]) UpdateFromMessage(
 	return s.update(state.(S), t)
 }
 
-var _ state.Control = &CheckboxControl[struct{}]{}
+var _ fairytale.Control = &Checkbox[struct{}]{}
 
-// CheckboxControl is a Control that lets you update the state by toggling a
+// Checkbox is a Control that lets you update the state by toggling a
 // checkbox.
-type CheckboxControl[S any] struct {
+type Checkbox[S any] struct {
 	label   string
 	update  func(state S, checked bool) S
 	checked func(S) bool
 }
 
-// NewCheckboxControl creates a new CheckboxControl.
-func NewCheckboxControl[S any](
+// NewCheckbox creates a new Checkbox.
+func NewCheckbox[S any](
 	label string,
 	update func(S, bool) S,
 	checked func(S) bool,
-) *CheckboxControl[S] {
-	return &CheckboxControl[S]{
+) *Checkbox[S] {
+	return &Checkbox[S]{
 		label:   label,
 		update:  update,
 		checked: checked,
 	}
 }
 
-// Render renders the CheckboxControl as a <input type="checkbox"> HTML element.
-func (c CheckboxControl[S]) Render(
+// Render renders the Checkbox as a <input type="checkbox"> HTML element.
+func (c Checkbox[S]) Render(
 	state any,
 	path []int,
 	controlIndex int,
@@ -153,28 +153,28 @@ func (c CheckboxControl[S]) Render(
 		),
 	)
 }
-func (c CheckboxControl[S]) UpdateFromEvent(state any, event hypp.Event) any {
+func (c Checkbox[S]) UpdateFromEvent(state any, event hypp.Event) any {
 	checked := event.EscapeToValue().Get("target").Get("checked").Bool()
 	return c.update(state.(S), checked)
 }
-func (c CheckboxControl[S]) UpdateFromMessage(
+func (c Checkbox[S]) UpdateFromMessage(
 	state any,
 	data json.RawMessage,
 ) any {
 	var checked bool
 	if err := json.Unmarshal(data, &checked); err != nil {
-		panic(fmt.Errorf("fairy: CheckboxControl cannot JSON unmarshal data '%s' to type %T: %w", data, checked, err))
+		panic(fmt.Errorf("fairytale/control: Checkbox cannot JSON unmarshal data '%s' to type %T: %w", data, checked, err))
 	}
 	return c.update(state.(S), checked)
 }
 
-var _ state.Control = &NumberInputControl[struct{}, float64]{}
+var _ fairytale.Control = &NumberInput[struct{}, float64]{}
 
 type Number interface {
 	constraints.Integer | constraints.Float
 }
 
-type NumberInputControl[S any, N Number] struct {
+type NumberInput[S any, N Number] struct {
 	label  string
 	update func(state S, value N) S
 	value  func(S) N
@@ -182,37 +182,37 @@ type NumberInputControl[S any, N Number] struct {
 	max    *N
 }
 
-func NewNumberInputControl[S any, N Number](
+func NewNumberInput[S any, N Number](
 	label string,
 	update func(state S, value N) S,
 	value func(state S) N,
-) *NumberInputControl[S, N] {
-	return &NumberInputControl[S, N]{
+) *NumberInput[S, N] {
+	return &NumberInput[S, N]{
 		label:  label,
 		update: update,
 		value:  value,
 	}
 }
 
-func (n *NumberInputControl[S, N]) WithMin(min N) *NumberInputControl[S, N] {
+func (n *NumberInput[S, N]) WithMin(min N) *NumberInput[S, N] {
 	n.min = &min
 	return n
 }
 
-func (n *NumberInputControl[S, N]) WithMax(max N) *NumberInputControl[S, N] {
+func (n *NumberInput[S, N]) WithMax(max N) *NumberInput[S, N] {
 	n.max = &max
 	return n
 }
 
-func (n NumberInputControl[S, N]) parseNumber(b []byte) N {
+func (n NumberInput[S, N]) parseNumber(b []byte) N {
 	var number N
 	if err := json.Unmarshal(b, &number); err != nil {
-		panic(fmt.Errorf("fairy: NumberInputControl cannot parse '%s' as type %T: %w", b, number, err))
+		panic(fmt.Errorf("fairytale/control: NumberInput cannot parse '%s' as type %T: %w", b, number, err))
 	}
 	return number
 }
 
-func (n NumberInputControl[S, N]) Render(
+func (n NumberInput[S, N]) Render(
 	state any,
 	path []int,
 	controlIndex int,
@@ -237,7 +237,7 @@ func (n NumberInputControl[S, N]) Render(
 	)
 }
 
-func (n NumberInputControl[S, N]) keepInRange(number N) N {
+func (n NumberInput[S, N]) keepInRange(number N) N {
 	if n.min != nil && number < *n.min {
 		number = *n.min
 	}
@@ -247,7 +247,7 @@ func (n NumberInputControl[S, N]) keepInRange(number N) N {
 	return number
 }
 
-func (n NumberInputControl[S, N]) UpdateFromEvent(
+func (n NumberInput[S, N]) UpdateFromEvent(
 	state any,
 	event hypp.Event,
 ) any {
@@ -256,7 +256,7 @@ func (n NumberInputControl[S, N]) UpdateFromEvent(
 	return n.update(state.(S), number)
 }
 
-func (n NumberInputControl[S, N]) UpdateFromMessage(
+func (n NumberInput[S, N]) UpdateFromMessage(
 	state any,
 	data json.RawMessage,
 ) any {
@@ -265,9 +265,9 @@ func (n NumberInputControl[S, N]) UpdateFromMessage(
 	return n.update(state.(S), number)
 }
 
-var _ state.Control = &TextInputControl[struct{}]{}
+var _ fairytale.Control = &TextInput[struct{}]{}
 
-type TextInputControl[S any] struct {
+type TextInput[S any] struct {
 	label     string
 	update    func(state S, text string) S
 	value     func(S) string
@@ -275,29 +275,29 @@ type TextInputControl[S any] struct {
 	maxLength *int
 }
 
-func NewTextInputControl[S any](
+func NewTextInput[S any](
 	label string,
 	update func(state S, text string) S,
 	value func(state S) string,
-) *TextInputControl[S] {
-	return &TextInputControl[S]{
+) *TextInput[S] {
+	return &TextInput[S]{
 		label:  label,
 		update: update,
 		value:  value,
 	}
 }
 
-func (t *TextInputControl[S]) WithMinLength(minLength int) *TextInputControl[S] {
+func (t *TextInput[S]) WithMinLength(minLength int) *TextInput[S] {
 	t.minLength = &minLength
 	return t
 }
 
-func (t *TextInputControl[S]) WithMaxLength(maxLength int) *TextInputControl[S] {
+func (t *TextInput[S]) WithMaxLength(maxLength int) *TextInput[S] {
 	t.maxLength = &maxLength
 	return t
 }
 
-func (t TextInputControl[S]) Render(state any, path []int, controlIndex int) *hypp.VNode {
+func (t TextInput[S]) Render(state any, path []int, controlIndex int) *hypp.VNode {
 	inputProps := hypp.HProps{
 		"type":  "text",
 		"value": t.value(state.(S)),
@@ -318,41 +318,41 @@ func (t TextInputControl[S]) Render(state any, path []int, controlIndex int) *hy
 	)
 }
 
-func (t TextInputControl[S]) UpdateFromEvent(state any, event hypp.Event) any {
+func (t TextInput[S]) UpdateFromEvent(state any, event hypp.Event) any {
 	text := event.Target().Value()
 	return t.update(state.(S), text)
 }
 
-func (t TextInputControl[S]) UpdateFromMessage(
+func (t TextInput[S]) UpdateFromMessage(
 	state any,
 	data json.RawMessage,
 ) any {
 	var text string
 	if err := json.Unmarshal(data, &text); err != nil {
-		panic(fmt.Errorf("fairy: TextInputControl cannot parse '%s' as type %T: %w", data, text, err))
+		panic(fmt.Errorf("fairytale/control: TextInput cannot parse '%s' as type %T: %w", data, text, err))
 	}
 	return t.update(state.(S), text)
 }
 
-var _ state.Control = &ButtonControl[struct{}]{}
+var _ fairytale.Control = &Button[struct{}]{}
 
-// ButtonControl is a Control that lets you update the state by clicking a
+// Button is a Control that lets you update the state by clicking a
 // button.
-type ButtonControl[S any] struct {
+type Button[S any] struct {
 	label  string
 	update func(state S) S
 }
 
-// NewButtonControl creates a new ButtonControl.
-func NewButtonControl[S any](label string, update func(S) S) *ButtonControl[S] {
-	return &ButtonControl[S]{
+// NewButton creates a new Button.
+func NewButton[S any](label string, update func(S) S) *Button[S] {
+	return &Button[S]{
 		label:  label,
 		update: update,
 	}
 }
 
-// Render renders the ButtonControl as a <button> HTML element.
-func (c ButtonControl[S]) Render(
+// Render renders the Button as a <button> HTML element.
+func (c Button[S]) Render(
 	state any,
 	path []int,
 	controlIndex int,
@@ -372,10 +372,10 @@ func (c ButtonControl[S]) Render(
 	)
 }
 
-func (c ButtonControl[S]) UpdateFromEvent(state any, _ hypp.Event) any {
+func (c Button[S]) UpdateFromEvent(state any, _ hypp.Event) any {
 	return c.update(state.(S))
 }
 
-func (c ButtonControl[S]) UpdateFromMessage(state any, _ json.RawMessage) any {
+func (c Button[S]) UpdateFromMessage(state any, _ json.RawMessage) any {
 	return c.update(state.(S))
 }

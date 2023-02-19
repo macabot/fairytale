@@ -8,31 +8,24 @@ flowchart TD
 
 subgraph internal
     dispatch
-
-    subgraph render
-        page
-        component
-    end
-
-    state
+    component
     console
     driver
 end
 
 
-fairy --> dispatch
-fairy --> page
-fairy --> component
-fairy --> state
+book --> dispatch
+book --> component
+book --> fairytale
 
 dispatch --> driver
-dispatch --> state
+dispatch --> fairytale
 
 component --> dispatch
-component --> state
+component --> fairytale
 
-page --> state
-page --> component
+control --> fairytale
+control --> dispatch
 
-state --> console
+fairytale --> console
 ```

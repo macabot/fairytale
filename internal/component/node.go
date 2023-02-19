@@ -1,7 +1,7 @@
 package component
 
 import (
-	"github.com/macabot/fairytale/internal/state"
+	"github.com/macabot/fairytale"
 	"github.com/macabot/hypp"
 	"github.com/macabot/hypp/tag/html"
 )
@@ -18,7 +18,7 @@ func subPath(full, sub []int) bool {
 	return true
 }
 
-func Node(s *state.State, n state.Node, path []int, current []int) *hypp.VNode {
+func Node(s *fairytale.State, n fairytale.Node, path []int, current []int) *hypp.VNode {
 	isSubPath := subPath(current, path)
 
 	children := n.Children()

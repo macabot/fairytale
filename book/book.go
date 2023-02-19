@@ -1,21 +1,21 @@
-package fairy
+package book
 
 import (
 	"net/url"
 	"syscall/js"
 
+	"github.com/macabot/fairytale"
+	"github.com/macabot/fairytale/internal/component"
 	"github.com/macabot/fairytale/internal/dispatch"
-	"github.com/macabot/fairytale/internal/render/page"
-	"github.com/macabot/fairytale/internal/state"
 	"github.com/macabot/hypp"
 	jsd "github.com/macabot/hypp/driver/js"
 )
 
-// Run the Fairy Tale.
-func Run(tree Node, assets []*hypp.VNode) {
+// Open the Fairy Tales.
+func Open(tree fairytale.Node, assets []*hypp.VNode) {
 	top := js.Global().Get("top")
 	inTopFrame := js.Global().Get("self").Equal(top)
-	s := &state.State{Tree: tree.node(), Assets: assets}
+	s := &fairytale.State{Tree: tree, Assets: assets}
 	href := getHref(top)
 	s.UpdateCurrentFromURL(href)
 	if inTopFrame {
@@ -33,19 +33,19 @@ func getHref(window js.Value) *url.URL {
 	return href
 }
 
-func runAdmin(s *state.State) {
+func runAdmin(s *fairytale.State) {
 	el := js.Global().Get("document").Call("getElementById", "app")
 	if el.IsNull() {
 		panic("Could not find element with id 'app'.")
 	}
-	hypp.App(hypp.AppProps[*state.State]{
+	hypp.App(hypp.AppProps[*fairytale.State]{
 		Driver: jsd.Driver{},
 		Init:   s,
-		View:   page.AdminPage,
+		View:   component.AdminPage,
 		Node:   jsd.Node(el),
-		Subscriptions: func(_ *state.State) []hypp.Subscription {
+		Subscriptions: func(_ *fairytale.State) []hypp.Subscription {
 			return []hypp.Subscription{
-				dispatch.OnTaleEvent(hypp.Action[*state.State](dispatch.AppendTaleEvent)),
+				dispatch.OnTaleEvent(hypp.Action[*fairytale.State](dispatch.AppendTaleEvent)),
 				dispatch.OnHashChange(),
 			}
 		},
@@ -54,21 +54,21 @@ func runAdmin(s *state.State) {
 	select {} // run Go forever
 }
 
-func runApp(s *state.State) {
+func runApp(s *fairytale.State) {
 	el := js.Global().Get("document").Call("querySelector", "html")
 	if el.IsNull() {
 		panic("Could not find <html> element.")
 	}
-	hypp.App(hypp.AppProps[*state.State]{
+	hypp.App(hypp.AppProps[*fairytale.State]{
 		Driver: jsd.Driver{},
 		Init:   s,
-		View:   page.AppPage,
+		View:   component.AppPage,
 		Node:   jsd.Node(el),
-		Subscriptions: func(_ *state.State) []hypp.Subscription {
+		Subscriptions: func(_ *fairytale.State) []hypp.Subscription {
 			return []hypp.Subscription{
-				dispatch.OnSelectTale(hypp.Action[*state.State](dispatch.SelectTale)),
-				dispatch.OnOperateControl(hypp.Action[*state.State](dispatch.OperateControl)),
-				dispatch.OnRefreshApp(hypp.Action[*state.State](dispatch.RefreshApp)),
+				dispatch.OnSelectTale(hypp.Action[*fairytale.State](dispatch.SelectTale)),
+				dispatch.OnOperateControl(hypp.Action[*fairytale.State](dispatch.OperateControl)),
+				dispatch.OnRefreshApp(hypp.Action[*fairytale.State](dispatch.RefreshApp)),
 			}
 		},
 	})

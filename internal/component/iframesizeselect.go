@@ -1,15 +1,15 @@
 package component
 
 import (
+	"github.com/macabot/fairytale"
 	"github.com/macabot/fairytale/internal/dispatch"
-	"github.com/macabot/fairytale/internal/state"
 	"github.com/macabot/hypp"
 	"github.com/macabot/hypp/tag/html"
 )
 
-func IFrameSizeSelect(selectedSize state.IFrameSize) *hypp.VNode {
-	options := make([]*hypp.VNode, len(state.IFrameSizes))
-	for i, size := range state.IFrameSizes {
+func IFrameSizeSelect(selectedSize fairytale.IFrameSize) *hypp.VNode {
+	options := make([]*hypp.VNode, len(fairytale.IFrameSizes))
+	for i, size := range fairytale.IFrameSizes {
 		options[i] = html.Option(
 			hypp.HProps{
 				"value":    size.String(),
@@ -23,7 +23,7 @@ func IFrameSizeSelect(selectedSize state.IFrameSize) *hypp.VNode {
 		hypp.Text("Size"),
 		html.Select(
 			hypp.HProps{
-				"onchange": hypp.Action[*state.State](dispatch.SelectIFrameSize),
+				"onchange": hypp.Action[*fairytale.State](dispatch.SelectIFrameSize),
 			},
 			options...,
 		),

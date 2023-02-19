@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/macabot/fairytale/internal/state"
+	"github.com/macabot/fairytale"
 	"github.com/macabot/hypp"
 )
 
@@ -18,8 +18,8 @@ func OnChangeControl[T any](
 	talePath []int,
 	controlIndex int,
 	getEventData func(hypp.Event) T,
-) hypp.Action[*state.State] {
-	return func(s *state.State, payload hypp.Payload) hypp.Dispatchable {
+) hypp.Action[*fairytale.State] {
+	return func(s *fairytale.State, payload hypp.Payload) hypp.Dispatchable {
 		newState := s.Clone()
 		event := payload.(hypp.Event)
 		tale := newState.GetTale(talePath)
@@ -49,7 +49,7 @@ func OnOperateControl(dispatchable hypp.Dispatchable) hypp.Subscription {
 	}
 }
 
-func OperateControl(s *state.State, payload hypp.Payload) hypp.Dispatchable {
+func OperateControl(s *fairytale.State, payload hypp.Payload) hypp.Dispatchable {
 	raw := payload.(json.RawMessage)
 	var data operateControlData[json.RawMessage]
 	if err := json.Unmarshal(raw, &data); err != nil {

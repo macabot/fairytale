@@ -3,12 +3,12 @@ package component
 import (
 	"encoding/json"
 
-	"github.com/macabot/fairytale/internal/state"
+	"github.com/macabot/fairytale"
 	"github.com/macabot/hypp"
 	"github.com/macabot/hypp/tag/html"
 )
 
-func TaleEvents(events []state.TaleEvent) *hypp.VNode {
+func TaleEvents(events []fairytale.TaleEvent) *hypp.VNode {
 	children := make([]*hypp.VNode, len(events))
 	for i, taleEvent := range events {
 		b, _ := json.Marshal(taleEvent.Event)

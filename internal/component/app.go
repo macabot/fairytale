@@ -1,15 +1,14 @@
-package page
+package component
 
 import (
 	"fmt"
 
-	"github.com/macabot/fairytale/internal/render/component"
-	"github.com/macabot/fairytale/internal/state"
+	"github.com/macabot/fairytale"
 	"github.com/macabot/hypp"
 	"github.com/macabot/hypp/tag/html"
 )
 
-func AppPage(s *state.State) *hypp.VNode {
+func AppPage(s *fairytale.State) *hypp.VNode {
 	var assets []*hypp.VNode
 	currentTale := s.GetTale(s.Current)
 	if currentTale != nil {
@@ -22,21 +21,21 @@ func AppPage(s *state.State) *hypp.VNode {
 			"name":    "viewport",
 			"content": "width=device-width, initial-scale=1.0",
 		}),
-		html.Title(nil, hypp.Text(state.TaleToTitle(currentTale))),
+		html.Title(nil, hypp.Text(taleToTitle(currentTale))),
 	)
-	currentTaleNode := component.CurrentTale(currentTale)
-	target := state.TaleInsideBody
+	currentTaleNode := CurrentTale(currentTale)
+	target := fairytale.TaleInsideBody
 	if currentTale != nil {
 		target = currentTale.Settings().Target
 	}
 	var body *hypp.VNode
 	switch target {
-	case state.TaleInsideBody:
+	case fairytale.TaleInsideBody:
 		body = html.Body(nil, currentTaleNode)
-	case state.TaleAsBody:
+	case fairytale.TaleAsBody:
 		body = currentTaleNode
 	default:
-		panic(fmt.Errorf("invalid target %v", currentTale.Settings().Target))
+		panic(fmt.Errorf("invalid target %v", target))
 	}
 	return html.Html(
 		nil,

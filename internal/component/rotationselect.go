@@ -1,15 +1,15 @@
 package component
 
 import (
+	"github.com/macabot/fairytale"
 	"github.com/macabot/fairytale/internal/dispatch"
-	"github.com/macabot/fairytale/internal/state"
 	"github.com/macabot/hypp"
 	"github.com/macabot/hypp/tag/html"
 )
 
-func RotationSelect(selectedRotation state.Rotation) *hypp.VNode {
-	options := make([]*hypp.VNode, len(state.Rotations))
-	for i, rotation := range state.Rotations {
+func RotationSelect(selectedRotation fairytale.Rotation) *hypp.VNode {
+	options := make([]*hypp.VNode, len(fairytale.Rotations))
+	for i, rotation := range fairytale.Rotations {
 		options[i] = html.Option(
 			hypp.HProps{
 				"value":    rotation.String(),
@@ -23,7 +23,7 @@ func RotationSelect(selectedRotation state.Rotation) *hypp.VNode {
 		hypp.Text("Rotation"),
 		html.Select(
 			hypp.HProps{
-				"onchange": hypp.Action[*state.State](dispatch.SelectRotation),
+				"onchange": hypp.Action[*fairytale.State](dispatch.SelectRotation),
 			},
 			options...,
 		),

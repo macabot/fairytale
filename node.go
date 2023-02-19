@@ -1,4 +1,4 @@
-package state
+package fairytale
 
 import "github.com/gosimple/slug"
 

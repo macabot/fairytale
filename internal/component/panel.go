@@ -3,12 +3,12 @@ package component
 import (
 	"fmt"
 
-	"github.com/macabot/fairytale/internal/state"
+	"github.com/macabot/fairytale"
 	"github.com/macabot/hypp"
 	"github.com/macabot/hypp/tag/html"
 )
 
-func Panel(s *state.State) *hypp.VNode {
+func Panel(s *fairytale.State) *hypp.VNode {
 	panels := []func() *hypp.VNode{
 		func() *hypp.VNode { return Controls(s) },
 		func() *hypp.VNode { return TaleEvents(s.TaleEvents) },

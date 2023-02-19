@@ -4,8 +4,8 @@ import (
 	"net/url"
 	"syscall/js"
 
+	"github.com/macabot/fairytale"
 	"github.com/macabot/fairytale/internal/driver"
-	"github.com/macabot/fairytale/internal/state"
 	"github.com/macabot/hypp"
 )
 
@@ -28,8 +28,8 @@ func OnHashChange() hypp.Subscription {
 	}
 }
 
-func updateCurrentFromLocation(u *url.URL) hypp.Action[*state.State] {
-	return func(s *state.State, _ hypp.Payload) hypp.Dispatchable {
+func updateCurrentFromLocation(u *url.URL) hypp.Action[*fairytale.State] {
+	return func(s *fairytale.State, _ hypp.Payload) hypp.Dispatchable {
 		newState := s.Clone()
 		newState.UpdateCurrentFromURL(u)
 		postMessageToIFrame(message[[]int]{

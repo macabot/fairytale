@@ -1,12 +1,12 @@
 package component
 
 import (
-	"github.com/macabot/fairytale/internal/state"
+	"github.com/macabot/fairytale"
 	"github.com/macabot/hypp"
 	"github.com/macabot/hypp/tag/html"
 )
 
-func TreeView(s *state.State) *hypp.VNode {
+func TreeView(s *fairytale.State) *hypp.VNode {
 	children := s.Tree.Children()
 	childNodes := make([]*hypp.VNode, len(children))
 	for i, child := range children {

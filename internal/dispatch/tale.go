@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/macabot/fairytale/internal/state"
+	"github.com/macabot/fairytale"
 	"github.com/macabot/hypp"
 )
 
@@ -18,9 +18,9 @@ func OnTaleEvent(dispatchable hypp.Dispatchable) hypp.Subscription {
 	}
 }
 
-func AppendTaleEvent(s *state.State, payload hypp.Payload) hypp.Dispatchable {
+func AppendTaleEvent(s *fairytale.State, payload hypp.Payload) hypp.Dispatchable {
 	raw := payload.(json.RawMessage)
-	var event state.TaleEvent
+	var event fairytale.TaleEvent
 	if err := json.Unmarshal(raw, &event); err != nil {
 		panic(fmt.Errorf("fairy: cannot unmarshal appendTaleEvent data '%s': %w", string(raw), err))
 	}
@@ -29,24 +29,24 @@ func AppendTaleEvent(s *state.State, payload hypp.Payload) hypp.Dispatchable {
 	return newState
 }
 
-func TriggerTaleEvent(key string) hypp.Action[*state.State] {
-	return func(s *state.State, payload hypp.Payload) hypp.Dispatchable {
+func TriggerTaleEvent(key string) hypp.Action[*fairytale.State] {
+	return func(s *fairytale.State, payload hypp.Payload) hypp.Dispatchable {
 		event := payload.(hypp.Event)
-		postMessageToTopFrame(message[state.TaleEvent]{
+		postMessageToTopFrame(message[fairytale.TaleEvent]{
 			Type: messageTaleEvent,
-			Data: state.TaleEvent{Key: key, Event: event},
+			Data: fairytale.TaleEvent{Key: key, Event: event},
 		})
 		return s
 	}
 }
 
-func SelectTaleByPath(path []int) hypp.Action[*state.State] {
-	return func(s *state.State, _ hypp.Payload) hypp.Dispatchable {
+func SelectTaleByPath(path []int) hypp.Action[*fairytale.State] {
+	return func(s *fairytale.State, _ hypp.Payload) hypp.Dispatchable {
 		return selectTaleByPath(s, path)
 	}
 }
 
-func selectTaleByPath(s *state.State, path []int) *state.State {
+func selectTaleByPath(s *fairytale.State, path []int) *fairytale.State {
 	if equalPaths(s.Current, path) {
 		return s
 	}
@@ -82,7 +82,7 @@ func OnSelectTale(dispatchable hypp.Dispatchable) hypp.Subscription {
 	}
 }
 
-func SelectTale(s *state.State, payload hypp.Payload) hypp.Dispatchable {
+func SelectTale(s *fairytale.State, payload hypp.Payload) hypp.Dispatchable {
 	raw := payload.(json.RawMessage)
 	var path []int
 	if err := json.Unmarshal(raw, &path); err != nil {

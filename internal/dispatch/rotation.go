@@ -1,14 +1,14 @@
 package dispatch
 
 import (
-	"github.com/macabot/fairytale/internal/state"
+	"github.com/macabot/fairytale"
 	"github.com/macabot/hypp"
 )
 
-func SelectRotation(s *state.State, payload hypp.Payload) hypp.Dispatchable {
+func SelectRotation(s *fairytale.State, payload hypp.Payload) hypp.Dispatchable {
 	event := payload.(hypp.Event)
 	value := event.Target().Value()
-	rotation := state.MustRotationFromString(value)
+	rotation := fairytale.MustRotationFromString(value)
 
 	newState := s.Clone()
 	newState.Settings.Rotation = rotation
