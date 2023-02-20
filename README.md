@@ -14,9 +14,9 @@ subgraph internal
 end
 
 
-book --> dispatch
-book --> component
-book --> fairytale
+app --> dispatch
+app --> component
+app --> fairytale
 
 dispatch --> driver
 dispatch --> fairytale
