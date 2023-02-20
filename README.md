@@ -1,5 +1,5 @@
 # fairytale
-Develop and document Hypp components
+Develop and document [Hypp](https://github.com/macabot/hypp/) components
 
 ## Package dependency graph
 
