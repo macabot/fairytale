@@ -34,7 +34,7 @@ func updateCurrentFromLocation(u *url.URL) hypp.Action[*fairytale.State] {
 		newState.UpdateCurrentFromURL(u)
 		postMessageToIFrame(message[[]int]{
 			Type: messageSelectTale,
-			Data: newState.Current,
+			Data: newState.Current(),
 		})
 		return newState
 	}

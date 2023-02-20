@@ -31,9 +31,9 @@ func Run(options *Options, nodes ...fairytale.Node) {
 
 	tree := fairytale.NewBundle("", nodes...)
 	tree.SetIsOpen(true)
-	s := &fairytale.State{
-		Tree:   tree,
-		Assets: options.Assets,
+	s := fairytale.NewState(tree)
+	if options != nil {
+		s.SetAssets(options.Assets)
 	}
 
 	top := js.Global().Get("top")

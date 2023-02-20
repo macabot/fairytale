@@ -7,10 +7,10 @@ import (
 )
 
 func TreeView(s *fairytale.State) *hypp.VNode {
-	children := s.Tree.Children()
+	children := s.Tree().Children()
 	childNodes := make([]*hypp.VNode, len(children))
 	for i, child := range children {
-		childNodes[i] = Node(s, child, []int{i}, s.Current)
+		childNodes[i] = Node(s, child, []int{i}, s.Current())
 	}
 	return html.Nav(
 		hypp.HProps{"class": "tree-view"},

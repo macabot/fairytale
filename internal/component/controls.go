@@ -14,7 +14,7 @@ func Controls(s *fairytale.State) *hypp.VNode {
 	} else {
 		controls = make([]*hypp.VNode, len(tale.Controls()))
 		for i, control := range tale.Controls() {
-			controls[i] = control.Render(tale.State(), s.Current, i)
+			controls[i] = control.Render(tale.State(), s.Current(), i)
 		}
 	}
 	return html.Div(

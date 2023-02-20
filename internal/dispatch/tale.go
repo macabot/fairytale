@@ -25,7 +25,7 @@ func AppendTaleEvent(s *fairytale.State, payload hypp.Payload) hypp.Dispatchable
 		panic(fmt.Errorf("fairy: cannot unmarshal appendTaleEvent data '%s': %w", string(raw), err))
 	}
 	newState := s.Clone()
-	newState.TaleEvents = append(newState.TaleEvents, event)
+	newState.SetTaleEvents(append(newState.TaleEvents(), event))
 	return newState
 }
 
@@ -47,12 +47,12 @@ func SelectTaleByPath(path []int) hypp.Action[*fairytale.State] {
 }
 
 func selectTaleByPath(s *fairytale.State, path []int) *fairytale.State {
-	if equalPaths(s.Current, path) {
+	if equalPaths(s.Current(), path) {
 		return s
 	}
 	newState := s.Clone()
-	newState.Current = path
-	newState.TaleEvents = nil
+	newState.SetCurrent(path)
+	newState.SetTaleEvents(nil)
 	postMessageToIFrame(message[[]int]{
 		Type: messageSelectTale,
 		Data: path,
@@ -88,10 +88,10 @@ func SelectTale(s *fairytale.State, payload hypp.Payload) hypp.Dispatchable {
 	if err := json.Unmarshal(raw, &path); err != nil {
 		panic(fmt.Errorf("fairy: cannot unmarshal selectTale data '%s': %w", string(raw), err))
 	}
-	if equalPaths(path, s.Current) {
+	if equalPaths(path, s.Current()) {
 		return s
 	}
 	newState := s.Clone()
-	newState.Current = path
+	newState.SetCurrent(path)
 	return newState
 }

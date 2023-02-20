@@ -10,9 +10,9 @@ import (
 
 func AppPage(s *fairytale.State) *hypp.VNode {
 	var assets []*hypp.VNode
-	currentTale := s.GetTale(s.Current)
+	currentTale := s.GetTale(s.Current())
 	if currentTale != nil {
-		assets = s.Assets
+		assets = s.Assets()
 	}
 	headChildren := append(
 		assets,

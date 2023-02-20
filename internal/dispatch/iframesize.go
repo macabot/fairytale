@@ -12,8 +12,10 @@ func SelectIFrameSize(s *fairytale.State, payload hypp.Payload) hypp.Dispatchabl
 	value := event.Target().Value()
 	size := mustIFrameSizeFromString(value)
 
+	settings := s.Settings()
+	settings.IFrameSize = size
 	newState := s.Clone()
-	newState.Settings.IFrameSize = size
+	newState.SetSettings(settings)
 	postMessageToIFrame(message[struct{}]{
 		Type: messageRefreshApp,
 		Data: struct{}{},

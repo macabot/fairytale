@@ -20,16 +20,32 @@ type TaleEvent struct {
 
 type State struct {
 	hypp.EmptyState
-	Tree             Node
-	Current          []int
-	Settings         AdminSettings
-	Assets           []*hypp.VNode
-	TaleEvents       []TaleEvent
-	SelectedPanelTab int
+	tree             Node
+	current          []int
+	settings         AdminSettings
+	assets           []*hypp.VNode
+	taleEvents       []TaleEvent
+	selectedPanelTab int
 }
 
+func NewState(tree Node) *State {
+	return &State{tree: tree}
+}
+
+func (s State) Tree() Node                          { return s.tree }
+func (s State) Current() []int                      { return s.current }
+func (s *State) SetCurrent(current []int)           { s.current = current }
+func (s State) Settings() AdminSettings             { return s.settings }
+func (s *State) SetSettings(settings AdminSettings) { s.settings = settings }
+func (s State) Assets() []*hypp.VNode               { return s.assets }
+func (s *State) SetAssets(assets []*hypp.VNode)     { s.assets = assets }
+func (s State) TaleEvents() []TaleEvent             { return s.taleEvents }
+func (s *State) SetTaleEvents(events []TaleEvent)   { s.taleEvents = events }
+func (s State) SelectedPanelTab() int               { return s.selectedPanelTab }
+func (s *State) SetSelectedPanelTab(tab int)        { s.selectedPanelTab = tab }
+
 func (s State) GetTale(path []int) *Tale {
-	node := s.Tree
+	node := s.tree
 	for _, i := range path {
 		node = node.Children()[i]
 	}
@@ -37,7 +53,7 @@ func (s State) GetTale(path []int) *Tale {
 }
 
 func (s State) CurrentTale() *Tale {
-	return s.GetTale(s.Current)
+	return s.GetTale(s.current)
 }
 
 func (s State) Clone() *State {
@@ -45,12 +61,12 @@ func (s State) Clone() *State {
 }
 
 func (s State) ToURL(forceCurrent []int) *url.URL {
-	current := s.Current
+	current := s.current
 	if forceCurrent != nil {
 		current = forceCurrent
 	}
 	slugs := make([]string, len(current))
-	node := s.Tree
+	node := s.tree
 	for i, pathI := range current {
 		node = node.Children()[pathI]
 		slugs[i] = node.Slug()
@@ -72,7 +88,7 @@ func (s *State) UpdateCurrentFromURL(u *url.URL) {
 	}
 
 	slugs := strings.Split(path, "/")
-	node := s.Tree
+	node := s.tree
 	// Skip first slug which is an empty string.
 	current := make([]int, len(slugs)-1)
 	found := false
@@ -94,8 +110,8 @@ func (s *State) UpdateCurrentFromURL(u *url.URL) {
 	if !found {
 		console.Warn("Could not find tale for 'path' in URL fragment.")
 	} else {
-		s.Current = current
-		node := s.Tree
+		s.current = current
+		node := s.tree
 		for _, pathI := range current {
 			node = node.Children()[pathI]
 			node.SetIsOpen(true)

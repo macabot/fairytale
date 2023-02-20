@@ -11,7 +11,7 @@ import (
 func Panel(s *fairytale.State) *hypp.VNode {
 	panels := []func() *hypp.VNode{
 		func() *hypp.VNode { return Controls(s) },
-		func() *hypp.VNode { return TaleEvents(s.TaleEvents) },
+		func() *hypp.VNode { return TaleEvents(s.TaleEvents()) },
 	}
 	controls := 0
 	if tale := s.CurrentTale(); tale != nil {
@@ -20,10 +20,10 @@ func Panel(s *fairytale.State) *hypp.VNode {
 	return html.Div(
 		hypp.HProps{"class": "panel"},
 		PanelTabs(
-			s.SelectedPanelTab,
+			s.SelectedPanelTab(),
 			fmt.Sprintf("Controls (%d)", controls),
-			fmt.Sprintf("Events (%d)", len(s.TaleEvents)),
+			fmt.Sprintf("Events (%d)", len(s.TaleEvents())),
 		),
-		panels[s.SelectedPanelTab](),
+		panels[s.SelectedPanelTab()](),
 	)
 }
