@@ -12,36 +12,26 @@ type Node interface {
 	SetIsOpen(bool)
 }
 
-var _ Node = &Branch{}
+var _ Node = &Bundle{}
 
-// Branch is a Node that has at least 1 child node.
-type Branch struct {
+// Bundle forms a bundle of Nodes.
+type Bundle struct {
 	name     string
 	slug     string
 	children []Node
-	tale     *Tale
 	isOpen   bool
 }
 
-func (b Branch) Name() string           { return b.name }
-func (b Branch) Slug() string           { return b.slug }
-func (b Branch) Children() []Node       { return b.children }
-func (b Branch) Tale() *Tale            { return b.tale }
-func (b Branch) IsOpen() bool           { return b.isOpen }
-func (b *Branch) SetIsOpen(isOpen bool) { b.isOpen = isOpen }
+func (b Bundle) Name() string           { return b.name }
+func (b Bundle) Slug() string           { return b.slug }
+func (b Bundle) Children() []Node       { return b.children }
+func (b Bundle) Tale() *Tale            { return nil }
+func (b Bundle) IsOpen() bool           { return b.isOpen }
+func (b *Bundle) SetIsOpen(isOpen bool) { b.isOpen = isOpen }
 
-// NewTree creates a new navigation tree. The returned Node is the root of the
-// tree.
-func NewTree(children ...Node) *Branch {
-	return &Branch{
-		children: children,
-		isOpen:   true,
-	}
-}
-
-// NewBranch creates a new Branch.
-func NewBranch(name string, children ...Node) *Branch {
-	return &Branch{
+// NewBundle creates a new Branch.
+func NewBundle(name string, children ...Node) *Bundle {
+	return &Bundle{
 		name:     name,
 		slug:     slug.Make(name),
 		children: children,

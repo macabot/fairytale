@@ -1,4 +1,4 @@
-package book
+package app
 
 import (
 	"net/url"
@@ -11,11 +11,33 @@ import (
 	jsd "github.com/macabot/hypp/driver/js"
 )
 
-// Open the Fairy Tales.
-func Open(tree fairytale.Node, assets []*hypp.VNode) {
+type Options struct {
+	Assets []*hypp.VNode
+}
+
+// Run fairytale.
+func Run(options *Options, nodes ...fairytale.Node) {
+	wrap := false
+	for _, node := range nodes {
+		if node.Tale() != nil {
+			wrap = true
+			break
+		}
+	}
+	if wrap {
+		wrapper := fairytale.NewBundle("Fairy Tales", nodes...)
+		nodes = []fairytale.Node{wrapper}
+	}
+
+	tree := fairytale.NewBundle("", nodes...)
+	tree.SetIsOpen(true)
+	s := &fairytale.State{
+		Tree:   tree,
+		Assets: options.Assets,
+	}
+
 	top := js.Global().Get("top")
 	inTopFrame := js.Global().Get("self").Equal(top)
-	s := &fairytale.State{Tree: tree, Assets: assets}
 	href := getHref(top)
 	s.UpdateCurrentFromURL(href)
 	if inTopFrame {
