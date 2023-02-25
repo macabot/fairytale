@@ -15,6 +15,6 @@ func OnRefreshApp(dispatchable hypp.Dispatchable) hypp.Subscription {
 	}
 }
 
-func RefreshApp(s *fairytale.State, payload hypp.Payload) hypp.Dispatchable {
+func RefreshApp[S hypp.State](s *fairytale.State[S], payload hypp.Payload) hypp.Dispatchable {
 	return s.Clone()
 }

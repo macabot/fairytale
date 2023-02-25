@@ -6,7 +6,7 @@ import (
 	"github.com/macabot/hypp/tag/html"
 )
 
-func Controls(s *fairytale.State) *hypp.VNode {
+func Controls[S hypp.State](s *fairytale.State[S]) *hypp.VNode {
 	tale := s.CurrentTale()
 	var controls []*hypp.VNode
 	if tale == nil {

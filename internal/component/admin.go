@@ -6,7 +6,7 @@ import (
 	"github.com/macabot/hypp/tag/html"
 )
 
-func AdminPage(s *fairytale.State) *hypp.VNode {
+func AdminPage[S hypp.State](s *fairytale.State[S]) *hypp.VNode {
 	return html.Main(
 		nil,
 		TreeView(s),

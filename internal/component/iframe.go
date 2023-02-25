@@ -8,7 +8,7 @@ import (
 	"github.com/macabot/hypp/tag/html"
 )
 
-func IFrame(currentTale *fairytale.Tale, settings fairytale.AdminSettings) *hypp.VNode {
+func IFrame[S hypp.State](currentTale *fairytale.Tale[S], settings fairytale.AdminSettings) *hypp.VNode {
 	size := settings.IFrameSize
 	if settings.Rotation == fairytale.Landscape {
 		size.Swap()

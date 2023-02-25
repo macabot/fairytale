@@ -14,12 +14,12 @@ type operateControlData[T any] struct {
 	EventData    T
 }
 
-func OnChangeControl[T any](
+func OnChangeControl[S hypp.State, T any](
 	talePath []int,
 	controlIndex int,
 	getEventData func(hypp.Event) T,
-) hypp.Action[*fairytale.State] {
-	return func(s *fairytale.State, payload hypp.Payload) hypp.Dispatchable {
+) hypp.Action[*fairytale.State[S]] {
+	return func(s *fairytale.State[S], payload hypp.Payload) hypp.Dispatchable {
 		newState := s.Clone()
 		event := payload.(hypp.Event)
 		tale := newState.GetTale(talePath)
@@ -49,7 +49,7 @@ func OnOperateControl(dispatchable hypp.Dispatchable) hypp.Subscription {
 	}
 }
 
-func OperateControl(s *fairytale.State, payload hypp.Payload) hypp.Dispatchable {
+func OperateControl[S hypp.State](s *fairytale.State[S], payload hypp.Payload) hypp.Dispatchable {
 	raw := payload.(json.RawMessage)
 	var data operateControlData[json.RawMessage]
 	if err := json.Unmarshal(raw, &data); err != nil {

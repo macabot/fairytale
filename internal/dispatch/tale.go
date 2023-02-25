@@ -18,7 +18,7 @@ func OnTaleEvent(dispatchable hypp.Dispatchable) hypp.Subscription {
 	}
 }
 
-func AppendTaleEvent(s *fairytale.State, payload hypp.Payload) hypp.Dispatchable {
+func AppendTaleEvent[S hypp.State](s *fairytale.State[S], payload hypp.Payload) hypp.Dispatchable {
 	raw := payload.(json.RawMessage)
 	var event fairytale.TaleEvent
 	if err := json.Unmarshal(raw, &event); err != nil {
@@ -29,24 +29,31 @@ func AppendTaleEvent(s *fairytale.State, payload hypp.Payload) hypp.Dispatchable
 	return newState
 }
 
-func TriggerTaleEvent(key string) hypp.Action[*fairytale.State] {
-	return func(s *fairytale.State, payload hypp.Payload) hypp.Dispatchable {
+func TriggerTaleEvent[S hypp.State](tale *fairytale.Tale[S], key string, value any) hypp.Action[*fairytale.State[S]] {
+	return func(s *fairytale.State[S], payload hypp.Payload) hypp.Dispatchable {
 		event := payload.(hypp.Event)
 		postMessageToTopFrame(message[fairytale.TaleEvent]{
 			Type: messageTaleEvent,
 			Data: fairytale.TaleEvent{Key: key, Event: event},
 		})
-		return s
+
+		if dispatchable, ok := value.(hypp.Dispatchable); ok {
+			tale.Dispatch(dispatchable)
+		} else {
+			// TODO warn
+		}
+
+		return s.Clone()
 	}
 }
 
-func SelectTaleByPath(path []int) hypp.Action[*fairytale.State] {
-	return func(s *fairytale.State, _ hypp.Payload) hypp.Dispatchable {
+func SelectTaleByPath[S hypp.State](path []int) hypp.Action[*fairytale.State[S]] {
+	return func(s *fairytale.State[S], _ hypp.Payload) hypp.Dispatchable {
 		return selectTaleByPath(s, path)
 	}
 }
 
-func selectTaleByPath(s *fairytale.State, path []int) *fairytale.State {
+func selectTaleByPath[S hypp.State](s *fairytale.State[S], path []int) *fairytale.State[S] {
 	if equalPaths(s.Current(), path) {
 		return s
 	}
@@ -82,7 +89,7 @@ func OnSelectTale(dispatchable hypp.Dispatchable) hypp.Subscription {
 	}
 }
 
-func SelectTale(s *fairytale.State, payload hypp.Payload) hypp.Dispatchable {
+func SelectTale[S hypp.State](s *fairytale.State[S], payload hypp.Payload) hypp.Dispatchable {
 	raw := payload.(json.RawMessage)
 	var path []int
 	if err := json.Unmarshal(raw, &path); err != nil {

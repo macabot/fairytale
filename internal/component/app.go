@@ -8,7 +8,7 @@ import (
 	"github.com/macabot/hypp/tag/html"
 )
 
-func AppPage(s *fairytale.State) *hypp.VNode {
+func AppPage[S hypp.State](s *fairytale.State[S]) *hypp.VNode {
 	var assets []*hypp.VNode
 	currentTale := s.GetTale(s.Current())
 	if currentTale != nil {

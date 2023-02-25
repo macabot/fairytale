@@ -7,7 +7,7 @@ import (
 	"github.com/macabot/hypp"
 )
 
-func SelectIFrameSize(s *fairytale.State, payload hypp.Payload) hypp.Dispatchable {
+func SelectIFrameSize[S hypp.State](s *fairytale.State[S], payload hypp.Payload) hypp.Dispatchable {
 	event := payload.(hypp.Event)
 	value := event.Target().Value()
 	size := mustIFrameSizeFromString(value)

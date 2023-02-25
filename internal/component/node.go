@@ -18,7 +18,7 @@ func subPath(full, sub []int) bool {
 	return true
 }
 
-func Node(s *fairytale.State, n fairytale.Node, path []int, current []int) *hypp.VNode {
+func Node[S hypp.State](s *fairytale.State[S], n fairytale.Node[S], path []int, current []int) *hypp.VNode {
 	isSubPath := subPath(current, path)
 
 	children := n.Children()

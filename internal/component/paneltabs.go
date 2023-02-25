@@ -6,10 +6,10 @@ import (
 	"github.com/macabot/hypp/tag/html"
 )
 
-func PanelTabs(selectedTab int, names ...string) *hypp.VNode {
+func PanelTabs[S hypp.State](selectedTab int, names ...string) *hypp.VNode {
 	children := make([]*hypp.VNode, len(names))
 	for i, name := range names {
-		children[i] = PanelTab(i, name, i == selectedTab)
+		children[i] = PanelTab[S](i, name, i == selectedTab)
 	}
 	return html.Div(
 		hypp.HProps{"class": "panel-tabs"},
@@ -17,14 +17,14 @@ func PanelTabs(selectedTab int, names ...string) *hypp.VNode {
 	)
 }
 
-func PanelTab(i int, name string, selected bool) *hypp.VNode {
+func PanelTab[S hypp.State](i int, name string, selected bool) *hypp.VNode {
 	return html.Span(
 		hypp.HProps{
 			"class": map[string]bool{
 				"panel-tab": true,
 				"selected":  selected,
 			},
-			"onclick": dispatch.SelectPanelTab(i),
+			"onclick": dispatch.SelectPanelTab[S](i),
 		},
 		hypp.Text(name),
 	)

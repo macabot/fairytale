@@ -18,9 +18,9 @@ type TaleEvent struct {
 	Event any
 }
 
-type State struct {
+type State[S hypp.State] struct {
 	hypp.EmptyState
-	tree             Node
+	tree             Node[S]
 	current          []int
 	settings         AdminSettings
 	assets           []*hypp.VNode
@@ -28,23 +28,23 @@ type State struct {
 	selectedPanelTab int
 }
 
-func NewState(tree Node) *State {
-	return &State{tree: tree}
+func NewState[S hypp.State](tree Node[S]) *State[S] {
+	return &State[S]{tree: tree}
 }
 
-func (s State) Tree() Node                          { return s.tree }
-func (s State) Current() []int                      { return s.current }
-func (s *State) SetCurrent(current []int)           { s.current = current }
-func (s State) Settings() AdminSettings             { return s.settings }
-func (s *State) SetSettings(settings AdminSettings) { s.settings = settings }
-func (s State) Assets() []*hypp.VNode               { return s.assets }
-func (s *State) SetAssets(assets []*hypp.VNode)     { s.assets = assets }
-func (s State) TaleEvents() []TaleEvent             { return s.taleEvents }
-func (s *State) SetTaleEvents(events []TaleEvent)   { s.taleEvents = events }
-func (s State) SelectedPanelTab() int               { return s.selectedPanelTab }
-func (s *State) SetSelectedPanelTab(tab int)        { s.selectedPanelTab = tab }
+func (s State[S]) Tree() Node[S]                       { return s.tree }
+func (s State[S]) Current() []int                      { return s.current }
+func (s *State[S]) SetCurrent(current []int)           { s.current = current }
+func (s State[S]) Settings() AdminSettings             { return s.settings }
+func (s *State[S]) SetSettings(settings AdminSettings) { s.settings = settings }
+func (s State[S]) Assets() []*hypp.VNode               { return s.assets }
+func (s *State[S]) SetAssets(assets []*hypp.VNode)     { s.assets = assets }
+func (s State[S]) TaleEvents() []TaleEvent             { return s.taleEvents }
+func (s *State[S]) SetTaleEvents(events []TaleEvent)   { s.taleEvents = events }
+func (s State[S]) SelectedPanelTab() int               { return s.selectedPanelTab }
+func (s *State[S]) SetSelectedPanelTab(tab int)        { s.selectedPanelTab = tab }
 
-func (s State) GetTale(path []int) *Tale {
+func (s State[S]) GetTale(path []int) *Tale[S] {
 	node := s.tree
 	for _, i := range path {
 		node = node.Children()[i]
@@ -52,15 +52,15 @@ func (s State) GetTale(path []int) *Tale {
 	return node.Tale()
 }
 
-func (s State) CurrentTale() *Tale {
+func (s State[S]) CurrentTale() *Tale[S] {
 	return s.GetTale(s.current)
 }
 
-func (s State) Clone() *State {
+func (s State[S]) Clone() *State[S] {
 	return &s
 }
 
-func (s State) ToURL(forceCurrent []int) *url.URL {
+func (s State[S]) ToURL(forceCurrent []int) *url.URL {
 	current := s.current
 	if forceCurrent != nil {
 		current = forceCurrent
@@ -78,7 +78,7 @@ func (s State) ToURL(forceCurrent []int) *url.URL {
 	}
 }
 
-func (s *State) UpdateCurrentFromURL(u *url.URL) {
+func (s *State[S]) UpdateCurrentFromURL(u *url.URL) {
 	path := u.Fragment
 	if path == "" {
 		path = "/"

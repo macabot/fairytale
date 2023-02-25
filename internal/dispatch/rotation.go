@@ -7,7 +7,7 @@ import (
 	"github.com/macabot/hypp"
 )
 
-func SelectRotation(s *fairytale.State, payload hypp.Payload) hypp.Dispatchable {
+func SelectRotation[S hypp.State](s *fairytale.State[S], payload hypp.Payload) hypp.Dispatchable {
 	event := payload.(hypp.Event)
 	value := event.Target().Value()
 	rotation := mustRotationFromString(value)

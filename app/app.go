@@ -16,7 +16,7 @@ type Options struct {
 }
 
 // Run fairytale.
-func Run(options *Options, nodes ...fairytale.Node) {
+func Run[S hypp.State](options *Options, nodes ...fairytale.Node[S]) {
 	wrap := false
 	for _, node := range nodes {
 		if node.Tale() != nil {
@@ -26,12 +26,12 @@ func Run(options *Options, nodes ...fairytale.Node) {
 	}
 	if wrap {
 		wrapper := fairytale.NewBundle("Fairy Tales", nodes...)
-		nodes = []fairytale.Node{wrapper}
+		nodes = []fairytale.Node[S]{wrapper}
 	}
 
 	tree := fairytale.NewBundle("", nodes...)
 	tree.SetIsOpen(true)
-	s := fairytale.NewState(tree)
+	s := fairytale.NewState[S](tree)
 	if options != nil {
 		s.SetAssets(options.Assets)
 	}
@@ -55,20 +55,20 @@ func getHref(window js.Value) *url.URL {
 	return href
 }
 
-func runAdmin(s *fairytale.State) {
+func runAdmin[S hypp.State](s *fairytale.State[S]) {
 	el := js.Global().Get("document").Call("getElementById", "app")
 	if el.IsNull() {
 		panic("Could not find element with id 'app'.")
 	}
-	hypp.App(hypp.AppProps[*fairytale.State]{
+	hypp.App(hypp.AppProps[*fairytale.State[S]]{
 		Driver: jsd.Driver{},
 		Init:   s,
-		View:   component.AdminPage,
+		View:   component.AdminPage[S],
 		Node:   jsd.Node(el),
-		Subscriptions: func(_ *fairytale.State) []hypp.Subscription {
+		Subscriptions: func(_ *fairytale.State[S]) []hypp.Subscription {
 			return []hypp.Subscription{
-				dispatch.OnTaleEvent(hypp.Action[*fairytale.State](dispatch.AppendTaleEvent)),
-				dispatch.OnHashChange(),
+				dispatch.OnTaleEvent(hypp.Action[*fairytale.State[S]](dispatch.AppendTaleEvent[S])),
+				dispatch.OnHashChange[S](),
 			}
 		},
 	})
@@ -76,21 +76,21 @@ func runAdmin(s *fairytale.State) {
 	select {} // run Go forever
 }
 
-func runApp(s *fairytale.State) {
+func runApp[S hypp.State](s *fairytale.State[S]) {
 	el := js.Global().Get("document").Call("querySelector", "html")
 	if el.IsNull() {
 		panic("Could not find <html> element.")
 	}
-	hypp.App(hypp.AppProps[*fairytale.State]{
+	hypp.App(hypp.AppProps[*fairytale.State[S]]{
 		Driver: jsd.Driver{},
 		Init:   s,
-		View:   component.AppPage,
+		View:   component.AppPage[S],
 		Node:   jsd.Node(el),
-		Subscriptions: func(_ *fairytale.State) []hypp.Subscription {
+		Subscriptions: func(_ *fairytale.State[S]) []hypp.Subscription {
 			return []hypp.Subscription{
-				dispatch.OnSelectTale(hypp.Action[*fairytale.State](dispatch.SelectTale)),
-				dispatch.OnOperateControl(hypp.Action[*fairytale.State](dispatch.OperateControl)),
-				dispatch.OnRefreshApp(hypp.Action[*fairytale.State](dispatch.RefreshApp)),
+				dispatch.OnSelectTale(hypp.Action[*fairytale.State[S]](dispatch.SelectTale[S])),
+				dispatch.OnOperateControl(hypp.Action[*fairytale.State[S]](dispatch.OperateControl[S])),
+				dispatch.OnRefreshApp(hypp.Action[*fairytale.State[S]](dispatch.RefreshApp[S])),
 			}
 		},
 	})

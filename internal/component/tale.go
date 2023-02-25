@@ -6,17 +6,17 @@ import (
 	"github.com/macabot/hypp"
 )
 
-func CurrentTale(tale *fairytale.Tale) *hypp.VNode {
+func CurrentTale[S hypp.State](tale *fairytale.Tale[S]) *hypp.VNode {
 	var content *hypp.VNode
 	if tale == nil {
 		content = hypp.Text("Select a tale")
 	} else {
-		content = replaceEventHandlers(tale.View())
+		content = replaceEventHandlers(tale, tale.View())
 	}
 	return content
 }
 
-func replaceEventHandlers(vNode *hypp.VNode) *hypp.VNode {
+func replaceEventHandlers[S hypp.State](tale *fairytale.Tale[S], vNode *hypp.VNode) *hypp.VNode {
 	if vNode == nil {
 		return vNode
 	}
@@ -29,13 +29,13 @@ func replaceEventHandlers(vNode *hypp.VNode) *hypp.VNode {
 	}
 	for key := range props {
 		if key[0] == 'o' && key[1] == 'n' {
-			props[key] = dispatch.TriggerTaleEvent(key)
+			props[key] = dispatch.TriggerTaleEvent(tale, key, props[key])
 		}
 	}
 	children := vNode.Children()
 	newChildren := make([]*hypp.VNode, len(children))
 	for i := 0; i < len(children); i++ {
-		newChildren[i] = replaceEventHandlers(children[i])
+		newChildren[i] = replaceEventHandlers(tale, children[i])
 	}
 	return hypp.H(
 		vNode.Tag(),
@@ -44,7 +44,7 @@ func replaceEventHandlers(vNode *hypp.VNode) *hypp.VNode {
 	)
 }
 
-func taleToTitle(t *fairytale.Tale) string {
+func taleToTitle[S hypp.State](t *fairytale.Tale[S]) string {
 	if t == nil {
 		return "No tale has been selected"
 	}

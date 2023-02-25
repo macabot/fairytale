@@ -6,7 +6,7 @@ import (
 	"github.com/macabot/hypp/tag/html"
 )
 
-func TreeView(s *fairytale.State) *hypp.VNode {
+func TreeView[S hypp.State](s *fairytale.State[S]) *hypp.VNode {
 	children := s.Tree().Children()
 	childNodes := make([]*hypp.VNode, len(children))
 	for i, child := range children {

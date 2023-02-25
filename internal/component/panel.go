@@ -8,7 +8,7 @@ import (
 	"github.com/macabot/hypp/tag/html"
 )
 
-func Panel(s *fairytale.State) *hypp.VNode {
+func Panel[S hypp.State](s *fairytale.State[S]) *hypp.VNode {
 	panels := []func() *hypp.VNode{
 		func() *hypp.VNode { return Controls(s) },
 		func() *hypp.VNode { return TaleEvents(s.TaleEvents()) },
@@ -19,7 +19,7 @@ func Panel(s *fairytale.State) *hypp.VNode {
 	}
 	return html.Div(
 		hypp.HProps{"class": "panel"},
-		PanelTabs(
+		PanelTabs[S](
 			s.SelectedPanelTab(),
 			fmt.Sprintf("Controls (%d)", controls),
 			fmt.Sprintf("Events (%d)", len(s.TaleEvents())),

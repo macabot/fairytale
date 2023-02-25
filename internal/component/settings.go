@@ -6,10 +6,10 @@ import (
 	"github.com/macabot/hypp/tag/html"
 )
 
-func Settings(settings fairytale.AdminSettings) *hypp.VNode {
+func Settings[S hypp.State](settings fairytale.AdminSettings) *hypp.VNode {
 	return html.Div(
 		hypp.HProps{"class": "settings"},
-		IFrameSizeSelect(settings.IFrameSize),
-		RotationSelect(settings.Rotation),
+		IFrameSizeSelect[S](settings.IFrameSize),
+		RotationSelect[S](settings.Rotation),
 	)
 }

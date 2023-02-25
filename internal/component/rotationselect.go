@@ -7,7 +7,7 @@ import (
 	"github.com/macabot/hypp/tag/html"
 )
 
-func RotationSelect(selectedRotation fairytale.Rotation) *hypp.VNode {
+func RotationSelect[S hypp.State](selectedRotation fairytale.Rotation) *hypp.VNode {
 	options := make([]*hypp.VNode, len(fairytale.Rotations))
 	for i, rotation := range fairytale.Rotations {
 		options[i] = html.Option(
@@ -23,7 +23,7 @@ func RotationSelect(selectedRotation fairytale.Rotation) *hypp.VNode {
 		hypp.Text("Rotation"),
 		html.Select(
 			hypp.HProps{
-				"onchange": hypp.Action[*fairytale.State](dispatch.SelectRotation),
+				"onchange": hypp.Action[*fairytale.State[S]](dispatch.SelectRotation[S]),
 			},
 			options...,
 		),

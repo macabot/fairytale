@@ -7,7 +7,7 @@ import (
 	"github.com/macabot/hypp/tag/html"
 )
 
-func IFrameSizeSelect(selectedSize fairytale.IFrameSize) *hypp.VNode {
+func IFrameSizeSelect[S hypp.State](selectedSize fairytale.IFrameSize) *hypp.VNode {
 	options := make([]*hypp.VNode, len(fairytale.IFrameSizes))
 	for i, size := range fairytale.IFrameSizes {
 		options[i] = html.Option(
@@ -23,7 +23,7 @@ func IFrameSizeSelect(selectedSize fairytale.IFrameSize) *hypp.VNode {
 		hypp.Text("Size"),
 		html.Select(
 			hypp.HProps{
-				"onchange": hypp.Action[*fairytale.State](dispatch.SelectIFrameSize),
+				"onchange": hypp.Action[*fairytale.State[S]](dispatch.SelectIFrameSize[S]),
 			},
 			options...,
 		),
