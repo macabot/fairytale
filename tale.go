@@ -29,6 +29,12 @@ type Control[S hypp.State] interface {
 	UpdateFromMessage(state S, data json.RawMessage) S
 }
 
+type TaleEvent[S hypp.State] struct {
+	Path  []int
+	Label string
+	State S
+}
+
 // Tale is a Node that let's you develop and document a component.
 type Tale[S hypp.State] struct {
 	name     string
@@ -39,6 +45,7 @@ type Tale[S hypp.State] struct {
 
 	controls []Control[S]
 	settings TaleSettings
+	events   []TaleEvent[S]
 }
 
 // New creates a new Tale.
@@ -86,6 +93,13 @@ func (t Tale[S]) View() *hypp.VNode      { return t.view(t.state) }
 func (t Tale[S]) Controls() []Control[S] { return t.controls }
 func (t Tale[S]) State() S               { return t.state }
 func (t Tale[S]) Settings() TaleSettings { return t.settings }
+func (t *Tale[S]) ClearEvents()          { t.events = nil }
+func (t Tale[S]) Events() []TaleEvent[S] { return t.events }
+
+func (t *Tale[S]) AppendEvent(event TaleEvent[S]) {
+	t.events = append(t.events, event)
+}
+
 func (t *Tale[S]) Dispatch(dispatchable hypp.Dispatchable) {
 	t.dispatch(dispatchable, nil)
 }

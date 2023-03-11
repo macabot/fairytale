@@ -20,22 +20,27 @@ func OnTaleEvent(dispatchable hypp.Dispatchable) hypp.Subscription {
 
 func AppendTaleEvent[S hypp.State](s *fairytale.State[S], payload hypp.Payload) hypp.Dispatchable {
 	raw := payload.(json.RawMessage)
-	var event fairytale.TaleEvent
+	var event fairytale.TaleEvent[S]
 	if err := json.Unmarshal(raw, &event); err != nil {
 		panic(fmt.Errorf("fairy: cannot unmarshal appendTaleEvent data '%s': %w", string(raw), err))
 	}
+
 	newState := s.Clone()
-	newState.SetTaleEvents(append(newState.TaleEvents(), event))
+	tale := newState.GetTale(event.Path)
+	tale.SetState(event.State)
+	tale.AppendEvent(event)
 	return newState
 }
 
-func TriggerTaleEvent[S hypp.State](tale *fairytale.Tale[S], key string, value any) hypp.Action[*fairytale.State[S]] {
-	return func(s *fairytale.State[S], payload hypp.Payload) hypp.Dispatchable {
-		event := payload.(hypp.Event)
-		postMessageToTopFrame(message[fairytale.TaleEvent]{
-			Type: messageTaleEvent,
-			Data: fairytale.TaleEvent{Key: key, Event: event},
-		})
+func TriggerTaleEvent[S hypp.State](
+	path []int,
+	tale *fairytale.Tale[S],
+	vNode *hypp.VNode,
+	key string,
+	value any,
+) hypp.Action[*fairytale.State[S]] {
+	return func(s *fairytale.State[S], _ hypp.Payload) hypp.Dispatchable {
+		newState := s.Clone()
 
 		if dispatchable, ok := value.(hypp.Dispatchable); ok {
 			tale.Dispatch(dispatchable)
@@ -43,7 +48,19 @@ func TriggerTaleEvent[S hypp.State](tale *fairytale.Tale[S], key string, value a
 			// TODO warn
 		}
 
-		return s.Clone()
+		// TODO add classes, if any, to label.
+		label := fmt.Sprintf(`<%s %s="func">`, vNode.Tag(), key)
+
+		postMessageToTopFrame(message[fairytale.TaleEvent[S]]{
+			Type: messageTaleEvent,
+			Data: fairytale.TaleEvent[S]{
+				Path:  path,
+				Label: label,
+				State: tale.State(),
+			},
+		})
+
+		return newState
 	}
 }
 
@@ -59,7 +76,8 @@ func selectTaleByPath[S hypp.State](s *fairytale.State[S], path []int) *fairytal
 	}
 	newState := s.Clone()
 	newState.SetCurrent(path)
-	newState.SetTaleEvents(nil)
+	tale := newState.GetTale(path)
+	tale.ClearEvents()
 	postMessageToIFrame(message[[]int]{
 		Type: messageSelectTale,
 		Data: path,

@@ -1,21 +1,17 @@
 package component
 
 import (
-	"encoding/json"
-
 	"github.com/macabot/fairytale"
 	"github.com/macabot/hypp"
 	"github.com/macabot/hypp/tag/html"
 )
 
-func TaleEvents(events []fairytale.TaleEvent) *hypp.VNode {
+func TaleEvents[S hypp.State](events []fairytale.TaleEvent[S]) *hypp.VNode {
 	children := make([]*hypp.VNode, len(events))
 	for i, taleEvent := range events {
-		b, _ := json.Marshal(taleEvent.Event)
 		children[i] = html.Li(
 			hypp.HProps{"class": "tale-event"},
-			html.Span(hypp.HProps{"class": "key"}, hypp.Text(taleEvent.Key)),
-			html.Pre(nil, hypp.Text(string(b))),
+			html.Span(hypp.HProps{"class": "key"}, hypp.Text(taleEvent.Label)),
 		)
 	}
 	var child *hypp.VNode

@@ -10,7 +10,8 @@ import (
 
 func AppPage[S hypp.State](s *fairytale.State[S]) *hypp.VNode {
 	var assets []*hypp.VNode
-	currentTale := s.GetTale(s.Current())
+	path := s.Current()
+	currentTale := s.GetTale(path)
 	if currentTale != nil {
 		assets = s.Assets()
 	}
@@ -23,7 +24,7 @@ func AppPage[S hypp.State](s *fairytale.State[S]) *hypp.VNode {
 		}),
 		html.Title(nil, hypp.Text(taleToTitle(currentTale))),
 	)
-	currentTaleNode := CurrentTale(currentTale)
+	currentTaleNode := CurrentTale(path, currentTale)
 	target := fairytale.TaleInsideBody
 	if currentTale != nil {
 		target = currentTale.Settings().Target

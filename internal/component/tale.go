@@ -6,17 +6,21 @@ import (
 	"github.com/macabot/hypp"
 )
 
-func CurrentTale[S hypp.State](tale *fairytale.Tale[S]) *hypp.VNode {
+func CurrentTale[S hypp.State](path []int, tale *fairytale.Tale[S]) *hypp.VNode {
 	var content *hypp.VNode
 	if tale == nil {
 		content = hypp.Text("Select a tale")
 	} else {
-		content = replaceEventHandlers(tale, tale.View())
+		content = replaceEventHandlers(path, tale, tale.View())
 	}
 	return content
 }
 
-func replaceEventHandlers[S hypp.State](tale *fairytale.Tale[S], vNode *hypp.VNode) *hypp.VNode {
+func replaceEventHandlers[S hypp.State](
+	path []int,
+	tale *fairytale.Tale[S],
+	vNode *hypp.VNode,
+) *hypp.VNode {
 	if vNode == nil {
 		return vNode
 	}
@@ -29,13 +33,19 @@ func replaceEventHandlers[S hypp.State](tale *fairytale.Tale[S], vNode *hypp.VNo
 	}
 	for key := range props {
 		if key[0] == 'o' && key[1] == 'n' {
-			props[key] = dispatch.TriggerTaleEvent(tale, key, props[key])
+			props[key] = dispatch.TriggerTaleEvent(
+				path,
+				tale,
+				vNode,
+				key,
+				props[key],
+			)
 		}
 	}
 	children := vNode.Children()
 	newChildren := make([]*hypp.VNode, len(children))
 	for i := 0; i < len(children); i++ {
-		newChildren[i] = replaceEventHandlers(tale, children[i])
+		newChildren[i] = replaceEventHandlers(path, tale, children[i])
 	}
 	return hypp.H(
 		vNode.Tag(),

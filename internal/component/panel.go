@@ -9,9 +9,11 @@ import (
 )
 
 func Panel[S hypp.State](s *fairytale.State[S]) *hypp.VNode {
+	tale := s.GetTale(s.Current())
+	events := tale.Events()
 	panels := []func() *hypp.VNode{
 		func() *hypp.VNode { return Controls(s) },
-		func() *hypp.VNode { return TaleEvents(s.TaleEvents()) },
+		func() *hypp.VNode { return TaleEvents(events) },
 	}
 	controls := 0
 	if tale := s.CurrentTale(); tale != nil {
@@ -22,7 +24,7 @@ func Panel[S hypp.State](s *fairytale.State[S]) *hypp.VNode {
 		PanelTabs[S](
 			s.SelectedPanelTab(),
 			fmt.Sprintf("Controls (%d)", controls),
-			fmt.Sprintf("Events (%d)", len(s.TaleEvents())),
+			fmt.Sprintf("Events (%d)", len(events)),
 		),
 		panels[s.SelectedPanelTab()](),
 	)

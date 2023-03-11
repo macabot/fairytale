@@ -13,18 +13,12 @@ type AdminSettings struct {
 	Rotation   Rotation
 }
 
-type TaleEvent struct {
-	Key   string
-	Event any
-}
-
 type State[S hypp.State] struct {
 	hypp.EmptyState
 	tree             Node[S]
 	current          []int
 	settings         AdminSettings
 	assets           []*hypp.VNode
-	taleEvents       []TaleEvent
 	selectedPanelTab int
 }
 
@@ -39,10 +33,9 @@ func (s State[S]) Settings() AdminSettings             { return s.settings }
 func (s *State[S]) SetSettings(settings AdminSettings) { s.settings = settings }
 func (s State[S]) Assets() []*hypp.VNode               { return s.assets }
 func (s *State[S]) SetAssets(assets []*hypp.VNode)     { s.assets = assets }
-func (s State[S]) TaleEvents() []TaleEvent             { return s.taleEvents }
-func (s *State[S]) SetTaleEvents(events []TaleEvent)   { s.taleEvents = events }
-func (s State[S]) SelectedPanelTab() int               { return s.selectedPanelTab }
-func (s *State[S]) SetSelectedPanelTab(tab int)        { s.selectedPanelTab = tab }
+
+func (s State[S]) SelectedPanelTab() int        { return s.selectedPanelTab }
+func (s *State[S]) SetSelectedPanelTab(tab int) { s.selectedPanelTab = tab }
 
 func (s State[S]) GetTale(path []int) *Tale[S] {
 	node := s.tree
