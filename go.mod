@@ -3,6 +3,7 @@ module github.com/macabot/fairytale
 go 1.18
 
 require (
+	github.com/gorilla/websocket v1.5.0
 	github.com/gosimple/slug v1.12.0
 	github.com/macabot/hypp v0.0.0
 	github.com/spf13/cobra v1.4.0

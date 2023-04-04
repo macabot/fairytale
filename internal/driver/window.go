@@ -7,3 +7,5 @@ import (
 
 // TODO refactor such that driver is chosen by client?
 var Window hypp.Window = js.Driver{}.Window()
+
+var JavaScript hypp.JavaScript = js.JavaScript{}

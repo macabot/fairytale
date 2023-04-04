@@ -7,9 +7,9 @@ import (
 
 func OnRefreshApp(dispatchable hypp.Dispatchable) hypp.Subscription {
 	return hypp.Subscription{
-		Subscriber: onMessage,
-		Payload: messageProps{
-			Type:         messageRefreshApp,
+		Subscriber: onWindowMessage,
+		Payload: windowMessageProps{
+			Type:         windowMessageRefreshApp,
 			Dispatchable: dispatchable,
 		},
 	}

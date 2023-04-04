@@ -10,9 +10,9 @@ import (
 
 func OnTaleEvent(dispatchable hypp.Dispatchable) hypp.Subscription {
 	return hypp.Subscription{
-		Subscriber: onMessage,
-		Payload: messageProps{
-			Type:         messageTaleEvent,
+		Subscriber: onWindowMessage,
+		Payload: windowMessageProps{
+			Type:         windowMessageTaleEvent,
 			Dispatchable: dispatchable,
 		},
 	}
@@ -51,8 +51,8 @@ func TriggerTaleEvent[S hypp.State](
 		// TODO add classes, if any, to label.
 		label := fmt.Sprintf(`<%s %s="func">`, vNode.Tag(), key)
 
-		postMessageToTopFrame(message[fairytale.TaleEvent[S]]{
-			Type: messageTaleEvent,
+		postWindowMessageToTopFrame(windowMessage[fairytale.TaleEvent[S]]{
+			Type: windowMessageTaleEvent,
 			Data: fairytale.TaleEvent[S]{
 				Path:  path,
 				Label: label,
@@ -78,8 +78,8 @@ func selectTaleByPath[S hypp.State](s *fairytale.State[S], path []int) *fairytal
 	newState.SetCurrent(path)
 	tale := newState.GetTale(path)
 	tale.ClearEvents()
-	postMessageToIFrame(message[[]int]{
-		Type: messageSelectTale,
+	postWindowMessageToIFrame(windowMessage[[]int]{
+		Type: windowMessageSelectTale,
 		Data: path,
 	})
 	return newState
@@ -99,9 +99,9 @@ func equalPaths(a, b []int) bool {
 
 func OnSelectTale(dispatchable hypp.Dispatchable) hypp.Subscription {
 	return hypp.Subscription{
-		Subscriber: onMessage,
-		Payload: messageProps{
-			Type:         messageSelectTale,
+		Subscriber: onWindowMessage,
+		Payload: windowMessageProps{
+			Type:         windowMessageSelectTale,
 			Dispatchable: dispatchable,
 		},
 	}

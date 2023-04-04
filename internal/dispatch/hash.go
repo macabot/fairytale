@@ -32,8 +32,8 @@ func updateCurrentFromLocation[S hypp.State](u *url.URL) hypp.Action[*fairytale.
 	return func(s *fairytale.State[S], _ hypp.Payload) hypp.Dispatchable {
 		newState := s.Clone()
 		newState.UpdateCurrentFromURL(u)
-		postMessageToIFrame(message[[]int]{
-			Type: messageSelectTale,
+		postWindowMessageToIFrame(windowMessage[[]int]{
+			Type: windowMessageSelectTale,
 			Data: newState.Current(),
 		})
 		return newState
