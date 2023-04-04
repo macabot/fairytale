@@ -69,6 +69,7 @@ func runAdmin[S hypp.State](s *fairytale.State[S]) {
 			return []hypp.Subscription{
 				dispatch.OnTaleEvent(hypp.Action[*fairytale.State[S]](dispatch.AppendTaleEvent[S])),
 				dispatch.OnHashChange[S](),
+				dispatch.SocketMessageSubscription(),
 			}
 		},
 	})

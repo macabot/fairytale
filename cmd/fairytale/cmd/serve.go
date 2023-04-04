@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/macabot/fairytale/internal/model"
 	"github.com/spf13/cobra"
 	"golang.org/x/mod/modfile"
 	"golang.org/x/mod/module"
@@ -21,6 +22,8 @@ type moduleList struct {
 }
 
 const fairytaleModPath = "github.com/macabot/fairytale"
+
+var hub *Hub
 
 func handle(mainWasmPath, wasmExecJsPath, assetsDir string) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -40,6 +43,24 @@ func handle(mainWasmPath, wasmExecJsPath, assetsDir string) func(http.ResponseWr
 		http.ServeFile(w, r, servePath)
 		fmt.Printf("[%s] %s %s --> %s\n", time.Now().Format(time.RFC3339), r.Method, r.URL, servePath)
 	}
+}
+
+func createReloadBytes() []byte {
+	message := model.SocketMessage{
+		Type: model.SocketMessageReload,
+	}
+	b, err := json.Marshal(message)
+	if err != nil {
+		panic(err)
+	}
+	return b
+}
+
+var reloadBytes = createReloadBytes()
+
+func handleReload(w http.ResponseWriter, r *http.Request) {
+	// TODO only allow POST
+	hub.broadcast <- reloadBytes
 }
 
 func findAssetsDir(cmd *cobra.Command) string {
@@ -112,6 +133,13 @@ var serveCmd = &cobra.Command{
 		assetsDir := findAssetsDir(cmd)
 		wasmExecJsPath := findWasmExecJsPath()
 
+		hub = newHub()
+		go hub.run()
+
+		http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+			serveWs(hub, w, r)
+		})
+		http.HandleFunc("/reload", handleReload)
 		http.HandleFunc("/", handle(mainWasmPath, wasmExecJsPath, assetsDir))
 		cobra.CheckErr(http.ListenAndServe(address, nil))
 	},

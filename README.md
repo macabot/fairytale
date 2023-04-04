@@ -10,6 +10,12 @@ Otherwise, the app in the iFrame isn't able to communicate the changed state to 
   - https://gowebexamples.com/websockets/
   - https://github.com/fsnotify/fsnotify
 
+## Reload page
+You can reload the page by calling the reload endpoint:
+```shell
+curl -X POST http://localhost:8000/reload
+```
+
 ## Package dependency graph
 
 ```mermaid

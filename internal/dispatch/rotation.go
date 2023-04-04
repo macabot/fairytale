@@ -16,8 +16,8 @@ func SelectRotation[S hypp.State](s *fairytale.State[S], payload hypp.Payload) h
 	settings.Rotation = rotation
 	newState := s.Clone()
 	newState.SetSettings(settings)
-	postMessageToIFrame(message[struct{}]{
-		Type: messageRefreshApp,
+	postWindowMessageToIFrame(windowMessage[struct{}]{
+		Type: windowMessageRefreshApp,
 		Data: struct{}{},
 	})
 	return newState

@@ -27,8 +27,8 @@ func OnChangeControl[S hypp.State, T any](
 		eventData := getEventData(event)
 		// TODO pass eventData instead of event to Update method?
 		tale.SetState(control.UpdateFromEvent(tale.State(), event))
-		postMessageToIFrame(message[operateControlData[T]]{
-			Type: messageOperateControl,
+		postWindowMessageToIFrame(windowMessage[operateControlData[T]]{
+			Type: windowMessageOperateControl,
 			Data: operateControlData[T]{
 				TalePath:     talePath,
 				ControlIndex: controlIndex,
@@ -41,9 +41,9 @@ func OnChangeControl[S hypp.State, T any](
 
 func OnOperateControl(dispatchable hypp.Dispatchable) hypp.Subscription {
 	return hypp.Subscription{
-		Subscriber: onMessage,
-		Payload: messageProps{
-			Type:         messageOperateControl,
+		Subscriber: onWindowMessage,
+		Payload: windowMessageProps{
+			Type:         windowMessageOperateControl,
 			Dispatchable: dispatchable,
 		},
 	}

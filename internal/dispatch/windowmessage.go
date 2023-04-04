@@ -9,16 +9,18 @@ import (
 	"github.com/macabot/hypp"
 )
 
-type messageProps struct {
-	Type         messageType
+// TODO combine listening to window and socket messages or create separate types?
+
+type windowMessageProps struct {
+	Type         windowMessageType
 	Dispatchable hypp.Dispatchable
 }
 
-func onMessage(dispatch hypp.Dispatch, payload hypp.Payload) hypp.Unsubscribe {
-	props := payload.(messageProps)
+func onWindowMessage(dispatch hypp.Dispatch, payload hypp.Payload) hypp.Unsubscribe {
+	props := payload.(windowMessageProps)
 	listener := func(event hypp.Event) {
 		data := event.EscapeToValue().Get("data").String()
-		var m message[json.RawMessage]
+		var m windowMessage[json.RawMessage]
 		if err := json.Unmarshal([]byte(data), &m); err != nil {
 			panic(fmt.Errorf("Cannot unmarshal message with data: %s", data))
 		}
@@ -32,21 +34,21 @@ func onMessage(dispatch hypp.Dispatch, payload hypp.Payload) hypp.Unsubscribe {
 	}
 }
 
-type messageType int
+type windowMessageType int
 
 const (
-	messageSelectTale messageType = iota + 1
-	messageOperateControl
-	messageTaleEvent
-	messageRefreshApp
+	windowMessageSelectTale windowMessageType = iota + 1
+	windowMessageOperateControl
+	windowMessageTaleEvent
+	windowMessageRefreshApp
 )
 
-type message[T any] struct {
-	Type messageType
+type windowMessage[T any] struct {
+	Type windowMessageType
 	Data T
 }
 
-func postMessageToIFrame[T any](m message[T]) {
+func postWindowMessageToIFrame[T any](m windowMessage[T]) {
 	origin := js.Global().Get("window").Get("location").Get("origin")
 	iframeEl := js.Global().Get("document").Call("querySelector", "iframe")
 	b, err := json.Marshal(m)
@@ -56,7 +58,7 @@ func postMessageToIFrame[T any](m message[T]) {
 	iframeEl.Get("contentWindow").Call("postMessage", string(b), origin)
 }
 
-func postMessageToTopFrame[T any](m message[T]) {
+func postWindowMessageToTopFrame[T any](m windowMessage[T]) {
 	origin := js.Global().Get("window").Get("location").Get("origin")
 	top := js.Global().Get("top")
 	b, err := json.Marshal(m)
