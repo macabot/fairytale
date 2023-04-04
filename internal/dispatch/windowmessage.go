@@ -9,8 +9,6 @@ import (
 	"github.com/macabot/hypp"
 )
 
-// TODO combine listening to window and socket messages or create separate types?
-
 type windowMessageProps struct {
 	Type         windowMessageType
 	Dispatchable hypp.Dispatchable
