@@ -9,16 +9,19 @@ import (
 )
 
 func Panel[S hypp.State](s *fairytale.State[S]) *hypp.VNode {
-	tale := s.GetTale(s.Current())
-	events := tale.Events()
+	tale := s.CurrentTale()
+	var events []fairytale.TaleEvent[S]
+	controls := 0
+	if tale != nil {
+		events = tale.Events()
+		controls = len(tale.Controls())
+	}
+
 	panels := []func() *hypp.VNode{
 		func() *hypp.VNode { return Controls(s) },
 		func() *hypp.VNode { return TaleEvents(events) },
 	}
-	controls := 0
-	if tale := s.CurrentTale(); tale != nil {
-		controls = len(tale.Controls())
-	}
+
 	return html.Div(
 		hypp.HProps{"class": "panel"},
 		PanelTabs[S](

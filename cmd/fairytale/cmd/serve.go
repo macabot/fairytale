@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -10,7 +11,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fatih/color"
+	"github.com/fsnotify/fsnotify"
 	"github.com/macabot/fairytale/internal/model"
+	"github.com/macabot/fairytale/internal/set"
 	"github.com/spf13/cobra"
 	"golang.org/x/mod/modfile"
 	"golang.org/x/mod/module"
@@ -24,6 +28,44 @@ type moduleList struct {
 const fairytaleModPath = "github.com/macabot/fairytale"
 
 var hub *Hub
+
+var (
+	serverPrefix  = "server"
+	watcherPrefix = "watcher"
+	maxPrefixLen  = len(watcherPrefix)
+)
+
+func serverLogf(format string, a ...any) {
+	logf(ServerLog, format, a...)
+}
+
+func watcherLogf(format string, a ...any) {
+	logf(WatcherLog, format, a...)
+}
+
+type LogKind int
+
+const (
+	ServerLog LogKind = iota + 1
+	WatcherLog
+)
+
+func logf(kind LogKind, format string, a ...any) {
+	var c *color.Color
+	var prefix string
+	switch kind {
+	case ServerLog:
+		c = color.New(color.FgCyan)
+		prefix = serverPrefix
+	case WatcherLog:
+		c = color.New(color.FgMagenta)
+		prefix = watcherPrefix
+	default:
+		panic("invalid LogKind")
+	}
+	c.Printf("%-*s | ", maxPrefixLen, prefix)
+	fmt.Printf(format, a...)
+}
 
 func handle(mainWasmPath, wasmExecJsPath, assetsDir string) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -41,7 +83,7 @@ func handle(mainWasmPath, wasmExecJsPath, assetsDir string) func(http.ResponseWr
 		}
 		servePath = filepath.Clean(servePath)
 		http.ServeFile(w, r, servePath)
-		fmt.Printf("[%s] %s %s --> %s\n", time.Now().Format(time.RFC3339), r.Method, r.URL, servePath)
+		serverLogf("[%s] %s %s --> %s\n", time.Now().Format(time.RFC3339), r.Method, r.URL, servePath)
 	}
 }
 
@@ -119,6 +161,64 @@ func findWasmExecJsPath() string {
 	return filepath.Join(goRoot, "misc", "wasm", "wasm_exec.js")
 }
 
+func runWatcher(stop chan struct{}, hub *Hub, paths []string) {
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer watcher.Close()
+
+	for i := range paths {
+		paths[i] = filepath.Clean(paths[i])
+	}
+	pathsSet := set.New(paths...)
+
+	go func() {
+		for {
+			select {
+			// FIXME why doesn't VSC recognize watcher.Events and watcher.Errors?
+			case event, ok := <-watcher.Events:
+				if !ok {
+					return
+				}
+
+				name := filepath.Clean(event.Name)
+				if !pathsSet.Has(name) {
+					// Ignore events that are not related to the given paths.
+					continue
+				}
+
+				watcherLogf("[%s] event %v\n", time.Now().Format(time.RFC3339), event)
+				hub.broadcast <- reloadBytes
+			case err, ok := <-watcher.Errors:
+				if !ok {
+					return
+				}
+				watcherLogf("[%s] error: %v\n", time.Now().Format(time.RFC3339), err)
+			}
+		}
+	}()
+
+	for _, path := range paths {
+		fileInfo, err := os.Stat(path)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if !fileInfo.IsDir() {
+			// Always watch directories in case a file is deleted and recreated.
+			path = filepath.Dir(path)
+		}
+		watcherLogf("[%s] add %s\n", time.Now().Format(time.RFC3339), path)
+		if err := watcher.Add(path); err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	<-stop
+}
+
+var watch bool
+
 // serveCmd represents the serve command
 var serveCmd = &cobra.Command{
 	Use:     "serve [address] [main.wasm]",
@@ -136,6 +236,14 @@ var serveCmd = &cobra.Command{
 		hub = newHub()
 		go hub.run()
 
+		if watch {
+			stopWatcher := make(chan struct{})
+			defer func() {
+				stopWatcher <- struct{}{}
+			}()
+			go runWatcher(stopWatcher, hub, []string{mainWasmPath, wasmExecJsPath, assetsDir})
+		}
+
 		http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 			serveWs(hub, w, r)
 		})
@@ -146,5 +254,6 @@ var serveCmd = &cobra.Command{
 }
 
 func init() {
+	serveCmd.Flags().BoolVar(&watch, "watch", false, "Watch for changes made to the files and reload the page when it happens.")
 	rootCmd.AddCommand(serveCmd)
 }
