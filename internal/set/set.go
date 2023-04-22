@@ -18,8 +18,10 @@ func (s Set[T]) Has(v T) bool {
 	return ok
 }
 
-func (s Set[T]) Add(v T) {
-	s[v] = struct{}{}
+func (s Set[T]) Add(v ...T) {
+	for _, x := range v {
+		s[x] = struct{}{}
+	}
 }
 
 func (s Set[T]) Equal(other Set[T]) bool {
@@ -38,4 +40,10 @@ func (s Set[T]) AddSet(other Set[T]) {
 	for x := range other {
 		s.Add(x)
 	}
+}
+
+func (s Set[T]) Clone() Set[T] {
+	clone := New[T]()
+	clone.AddSet(s)
+	return clone
 }

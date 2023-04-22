@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -67,7 +68,7 @@ func logf(kind LogKind, format string, a ...any) {
 	fmt.Printf(format, a...)
 }
 
-func handle(mainWasmPath, wasmExecJsPath, assetsDir string) func(http.ResponseWriter, *http.Request) {
+func handle(mainWasmPath, wasmExecJsPath, fairytaleAssetsDir, userAssetsDir string) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var servePath string
 		switch r.URL.Path {
@@ -76,9 +77,15 @@ func handle(mainWasmPath, wasmExecJsPath, assetsDir string) func(http.ResponseWr
 		case "/wasm_exec.js":
 			servePath = wasmExecJsPath
 		default:
-			servePath = filepath.Join(assetsDir, filepath.FromSlash(r.URL.Path))
-			if r.URL.Path == "/" {
-				servePath = filepath.Join(servePath, "index.html")
+			assetFound := false
+			if userAssetsDir != "" && r.URL.Path != "/" {
+				servePath = filepath.Join(userAssetsDir, filepath.FromSlash(r.URL.Path))
+				if _, err := os.Stat(servePath); err == nil {
+					assetFound = true
+				}
+			}
+			if !assetFound {
+				servePath = filepath.Join(fairytaleAssetsDir, filepath.FromSlash(r.URL.Path))
 			}
 		}
 		servePath = filepath.Clean(servePath)
@@ -105,7 +112,7 @@ func handleReload(w http.ResponseWriter, r *http.Request) {
 	hub.broadcast <- reloadBytes
 }
 
-func findAssetsDir(cmd *cobra.Command) string {
+func findFairytaleAssetsDir(cmd *cobra.Command) string {
 	out, err := exec.Command("go", "list", "-json", "-m").Output()
 	cobra.CheckErr(err)
 	var mod moduleList
@@ -120,7 +127,7 @@ func findAssetsDir(cmd *cobra.Command) string {
 	for _, require := range f.Require {
 		if require.Mod.Path == fairytaleModPath {
 			if require.Indirect {
-				cmd.PrintErrf("Warning: '%s' should not be an indirect requirement in your go.mod file.")
+				cmd.PrintErrf("Warning: '%s' should not be an indirect requirement in your go.mod file.", fairytaleModPath)
 			}
 			modVer = &require.Mod
 			break
@@ -133,7 +140,7 @@ func findAssetsDir(cmd *cobra.Command) string {
 		}
 	}
 	if modVer == nil {
-		cobra.CheckErr("Your go.mod file does not require " + fairytaleModPath)
+		cobra.CheckErr("Your go.mod file must require " + fairytaleModPath)
 	}
 
 	var fairytaleDir string
@@ -171,7 +178,28 @@ func runWatcher(stop chan struct{}, hub *Hub, paths []string) {
 	for i := range paths {
 		paths[i] = filepath.Clean(paths[i])
 	}
-	pathsSet := set.New(paths...)
+
+	dirPaths := set.Set[string]{}
+	upgradedDirPaths := map[string]set.Set[string]{}
+	for _, path := range paths {
+		fileInfo, err := os.Stat(path)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if fileInfo.IsDir() {
+			dirPaths.Add(path)
+		} else {
+			dir := filepath.Dir(path)
+			if upgradedPaths, ok := upgradedDirPaths[dir]; ok {
+				upgradedPaths.Add(path)
+			} else {
+				upgradedDirPaths[dir] = set.New(path)
+			}
+		}
+	}
+	for dir := range dirPaths {
+		delete(upgradedDirPaths, dir)
+	}
 
 	go func() {
 		for {
@@ -183,9 +211,13 @@ func runWatcher(stop chan struct{}, hub *Hub, paths []string) {
 				}
 
 				name := filepath.Clean(event.Name)
-				if !pathsSet.Has(name) {
-					// Ignore events that are not related to the given paths.
-					continue
+
+				// Ignore events of files that are only watched because we are watching the parent of another file we're interested in.
+				dir := filepath.Dir(name)
+				if paths, ok := upgradedDirPaths[dir]; ok {
+					if !paths.Has(name) {
+						continue
+					}
 				}
 
 				watcherLogf("[%s] event %v\n", time.Now().Format(time.RFC3339), event)
@@ -199,17 +231,22 @@ func runWatcher(stop chan struct{}, hub *Hub, paths []string) {
 		}
 	}()
 
-	for _, path := range paths {
-		fileInfo, err := os.Stat(path)
-		if err != nil {
+	pathsToWatch := dirPaths.Clone()
+	for dir := range upgradedDirPaths {
+		pathsToWatch.Add(dir)
+	}
+	for path := range dirPaths {
+		watcherLogf("[%s] watch %s\n", time.Now().Format(time.RFC3339), path)
+		if err := watcher.Add(path); err != nil {
 			log.Fatal(err)
 		}
-		if !fileInfo.IsDir() {
-			// Always watch directories in case a file is deleted and recreated.
-			path = filepath.Dir(path)
+	}
+	for dir, paths := range upgradedDirPaths {
+		for path := range paths {
+			watcherLogf("[%s] watch %s\n", time.Now().Format(time.RFC3339), path)
 		}
-		watcherLogf("[%s] add %s\n", time.Now().Format(time.RFC3339), path)
-		if err := watcher.Add(path); err != nil {
+		// Always watch directories in case a file is deleted and recreated.
+		if err := watcher.Add(dir); err != nil {
 			log.Fatal(err)
 		}
 	}
@@ -217,11 +254,14 @@ func runWatcher(stop chan struct{}, hub *Hub, paths []string) {
 	<-stop
 }
 
-var watch bool
+var (
+	watch         bool
+	userAssetsDir string
+)
 
 // serveCmd represents the serve command
 var serveCmd = &cobra.Command{
-	Use:     "serve [address] [main.wasm]",
+	Use:     "serve address main.wasm",
 	Short:   "Serve the fairytale application",
 	Long:    `Serve the fairytale application during development of your applications. The fairytale app will be served on the given address.`,
 	Example: "fairytale serve :8080 path/to/main.wasm",
@@ -230,7 +270,16 @@ var serveCmd = &cobra.Command{
 		address := args[0]
 		mainWasmPath := args[1]
 
-		assetsDir := findAssetsDir(cmd)
+		if userAssetsDir != "" {
+			if _, err := os.Stat(userAssetsDir); err != nil {
+				if errors.Is(err, os.ErrNotExist) {
+					cobra.CheckErr(fmt.Errorf("Assets directory '%s' does not exist."))
+				} else {
+					cobra.CheckErr(fmt.Errorf("Could not check if assets directory '%s' exist. %w", err))
+				}
+			}
+		}
+		fairytaleAssetsDir := findFairytaleAssetsDir(cmd)
 		wasmExecJsPath := findWasmExecJsPath()
 
 		hub = newHub()
@@ -241,19 +290,24 @@ var serveCmd = &cobra.Command{
 			defer func() {
 				stopWatcher <- struct{}{}
 			}()
-			go runWatcher(stopWatcher, hub, []string{mainWasmPath, wasmExecJsPath, assetsDir})
+			paths := []string{mainWasmPath, wasmExecJsPath, fairytaleAssetsDir}
+			if userAssetsDir != "" {
+				paths = append(paths, userAssetsDir)
+			}
+			go runWatcher(stopWatcher, hub, paths)
 		}
 
 		http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 			serveWs(hub, w, r)
 		})
 		http.HandleFunc("/reload", handleReload)
-		http.HandleFunc("/", handle(mainWasmPath, wasmExecJsPath, assetsDir))
+		http.HandleFunc("/", handle(mainWasmPath, wasmExecJsPath, fairytaleAssetsDir, userAssetsDir))
 		cobra.CheckErr(http.ListenAndServe(address, nil))
 	},
 }
 
 func init() {
 	serveCmd.Flags().BoolVar(&watch, "watch", false, "Watch for changes made to the files and reload the page when it happens.")
+	serveCmd.Flags().StringVar(&userAssetsDir, "assets", "", "Serve the files in the given directory.")
 	rootCmd.AddCommand(serveCmd)
 }
