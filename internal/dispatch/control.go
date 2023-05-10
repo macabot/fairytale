@@ -14,7 +14,7 @@ type operateControlData[T any] struct {
 	EventData    T
 }
 
-func OnChangeControl[S hypp.State, T any](
+func ChangeControlAction[S hypp.State, T any](
 	talePath []int,
 	controlIndex int,
 	getEventData func(hypp.Event) T,
@@ -26,7 +26,7 @@ func OnChangeControl[S hypp.State, T any](
 		control := tale.Controls()[controlIndex]
 		eventData := getEventData(event)
 		// TODO pass eventData instead of event to Update method?
-		tale.SetState(control.UpdateFromEvent(tale.State(), event))
+		tale.Dispatch(control.UpdateFromEvent(tale.State(), event), payload)
 		postWindowMessageToIFrame(windowMessage[operateControlData[T]]{
 			Type: windowMessageOperateControl,
 			Data: operateControlData[T]{
@@ -39,24 +39,26 @@ func OnChangeControl[S hypp.State, T any](
 	}
 }
 
-func OnOperateControl(dispatchable hypp.Dispatchable) hypp.Subscription {
+func OperateControlSubscription[S hypp.State]() hypp.Subscription {
 	return hypp.Subscription{
-		Subscriber: onWindowMessage,
+		Subscriber: subscribeToWindowMessage,
 		Payload: windowMessageProps{
 			Type:         windowMessageOperateControl,
-			Dispatchable: dispatchable,
+			Dispatchable: operateControlAction[S](),
 		},
 	}
 }
 
-func OperateControl[S hypp.State](s *fairytale.State[S], payload hypp.Payload) hypp.Dispatchable {
-	raw := payload.(json.RawMessage)
-	var data operateControlData[json.RawMessage]
-	if err := json.Unmarshal(raw, &data); err != nil {
-		panic(fmt.Errorf("fairy: cannot unmarshal operateControl data '%s': %w", string(raw), err))
+func operateControlAction[S hypp.State]() hypp.Action[*fairytale.State[S]] {
+	return func(s *fairytale.State[S], payload hypp.Payload) hypp.Dispatchable {
+		raw := payload.(json.RawMessage)
+		var data operateControlData[json.RawMessage]
+		if err := json.Unmarshal(raw, &data); err != nil {
+			panic(fmt.Errorf("fairy: cannot unmarshal operateControl data '%s': %w", string(raw), err))
+		}
+		tale := s.GetTale(data.TalePath)
+		control := tale.Controls()[data.ControlIndex]
+		tale.Dispatch(control.UpdateFromMessage(tale.State(), data.EventData), payload)
+		return s.Clone()
 	}
-	tale := s.GetTale(data.TalePath)
-	control := tale.Controls()[data.ControlIndex]
-	tale.SetState(control.UpdateFromMessage(tale.State(), data.EventData))
-	return s.Clone()
 }

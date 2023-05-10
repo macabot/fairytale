@@ -5,16 +5,18 @@ import (
 	"github.com/macabot/hypp"
 )
 
-func OnRefreshApp(dispatchable hypp.Dispatchable) hypp.Subscription {
+func RefreshAppSubscription[S hypp.State]() hypp.Subscription {
 	return hypp.Subscription{
-		Subscriber: onWindowMessage,
+		Subscriber: subscribeToWindowMessage,
 		Payload: windowMessageProps{
 			Type:         windowMessageRefreshApp,
-			Dispatchable: dispatchable,
+			Dispatchable: refreshAppAction[S](),
 		},
 	}
 }
 
-func RefreshApp[S hypp.State](s *fairytale.State[S], payload hypp.Payload) hypp.Dispatchable {
-	return s.Clone()
+func refreshAppAction[S hypp.State]() hypp.Action[*fairytale.State[S]] {
+	return func(s *fairytale.State[S], _ hypp.Payload) hypp.Dispatchable {
+		return s.Clone()
+	}
 }

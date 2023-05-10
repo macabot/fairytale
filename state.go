@@ -49,6 +49,24 @@ func (s State[S]) CurrentTale() *Tale[S] {
 	return s.GetTale(s.current)
 }
 
+func (s State[S]) TalePaths() [][]int {
+	var talePaths [][]int
+	var walk func(Node[S], []int)
+	walk = func(node Node[S], path []int) {
+		if node.Tale() != nil {
+			talePaths = append(talePaths, path)
+		}
+		for i, child := range node.Children() {
+			childPath := make([]int, len(path)+1)
+			copy(childPath, path)
+			childPath[len(childPath)-1] = i
+			walk(child, childPath)
+		}
+	}
+	walk(s.tree, nil)
+	return talePaths
+}
+
 func (s State[S]) Clone() *State[S] {
 	return &s
 }

@@ -8,28 +8,63 @@ import (
 	"github.com/macabot/hypp"
 )
 
-func OnTaleEvent(dispatchable hypp.Dispatchable) hypp.Subscription {
+func TaleEventSubscription[S hypp.State]() hypp.Subscription {
 	return hypp.Subscription{
-		Subscriber: onWindowMessage,
+		Subscriber: subscribeToWindowMessage,
 		Payload: windowMessageProps{
 			Type:         windowMessageTaleEvent,
-			Dispatchable: dispatchable,
+			Dispatchable: appendTaleEventAction[S](),
 		},
 	}
 }
 
-func AppendTaleEvent[S hypp.State](s *fairytale.State[S], payload hypp.Payload) hypp.Dispatchable {
-	raw := payload.(json.RawMessage)
-	var event fairytale.TaleEvent[S]
-	if err := json.Unmarshal(raw, &event); err != nil {
-		panic(fmt.Errorf("fairy: cannot unmarshal appendTaleEvent data '%s': %w", string(raw), err))
-	}
+func appendTaleEventAction[S hypp.State]() hypp.Action[*fairytale.State[S]] {
+	return func(s *fairytale.State[S], payload hypp.Payload) hypp.Dispatchable {
+		raw := payload.(json.RawMessage)
+		var event fairytale.TaleEvent[S]
+		if err := json.Unmarshal(raw, &event); err != nil {
+			panic(fmt.Errorf("fairy: cannot unmarshal appendTaleEvent data '%s': %w", string(raw), err))
+		}
 
-	newState := s.Clone()
-	tale := newState.GetTale(event.Path)
-	tale.SetState(event.State)
-	tale.AppendEvent(event)
-	return newState
+		newState := s.Clone()
+		tale := newState.GetTale(event.Path)
+		tale.SetState(event.State)
+		tale.AppendEvent(event)
+		return newState
+	}
+}
+
+func TaleStateSubscription[S hypp.State](tale *fairytale.Tale[S], path []int) hypp.Subscription {
+	return hypp.Subscription{
+		Subscriber: func(dispatch hypp.Dispatch, payload hypp.Payload) hypp.Unsubscribe {
+			tale.SetStateSubscriber(func(taleState S) {
+				dispatch(hypp.Action[*fairytale.State[S]](func(s *fairytale.State[S], _ hypp.Payload) hypp.Dispatchable {
+					postWindowMessageToTopFrame(windowMessage[fairytale.TaleEvent[S]]{
+						Type: windowMessageTaleEvent,
+						Data: fairytale.TaleEvent[S]{
+							Path:  path,
+							Label: "???", // FIXME
+							State: taleState,
+						},
+					})
+					return s.Clone()
+				}), nil)
+			})
+			return func() {
+				tale.SetStateSubscriber(nil)
+			}
+		},
+	}
+}
+
+func taleDispatchAction[S hypp.State](
+	tale *fairytale.Tale[S],
+	dispatchable hypp.Dispatchable,
+) hypp.Action[*fairytale.State[S]] {
+	return func(s *fairytale.State[S], payload hypp.Payload) hypp.Dispatchable {
+		tale.Dispatch(dispatchable, payload)
+		return s
+	}
 }
 
 func TriggerTaleEvent[S hypp.State](
@@ -38,51 +73,13 @@ func TriggerTaleEvent[S hypp.State](
 	vNode *hypp.VNode,
 	key string,
 	value any,
-) hypp.Action[*fairytale.State[S]] {
-	return func(s *fairytale.State[S], _ hypp.Payload) hypp.Dispatchable {
-		newState := s.Clone()
-
-		if dispatchable, ok := value.(hypp.Dispatchable); ok {
-			tale.Dispatch(dispatchable)
-		} else {
-			// TODO warn
-		}
-
-		// TODO add classes, if any, to label.
-		label := fmt.Sprintf(`<%s %s="func">`, vNode.Tag(), key)
-
-		postWindowMessageToTopFrame(windowMessage[fairytale.TaleEvent[S]]{
-			Type: windowMessageTaleEvent,
-			Data: fairytale.TaleEvent[S]{
-				Path:  path,
-				Label: label,
-				State: tale.State(),
-			},
-		})
-
-		return newState
+) any {
+	dispatchable, ok := value.(hypp.Dispatchable)
+	if !ok {
+		return value
 	}
-}
 
-func SelectTaleByPath[S hypp.State](path []int) hypp.Action[*fairytale.State[S]] {
-	return func(s *fairytale.State[S], _ hypp.Payload) hypp.Dispatchable {
-		return selectTaleByPath(s, path)
-	}
-}
-
-func selectTaleByPath[S hypp.State](s *fairytale.State[S], path []int) *fairytale.State[S] {
-	if equalPaths(s.Current(), path) {
-		return s
-	}
-	newState := s.Clone()
-	newState.SetCurrent(path)
-	tale := newState.GetTale(path)
-	tale.ClearEvents()
-	postWindowMessageToIFrame(windowMessage[[]int]{
-		Type: windowMessageSelectTale,
-		Data: path,
-	})
-	return newState
+	return taleDispatchAction(tale, dispatchable)
 }
 
 func equalPaths(a, b []int) bool {
@@ -97,26 +94,28 @@ func equalPaths(a, b []int) bool {
 	return true
 }
 
-func OnSelectTale(dispatchable hypp.Dispatchable) hypp.Subscription {
+func SelectTaleSubscription[S hypp.State]() hypp.Subscription {
 	return hypp.Subscription{
-		Subscriber: onWindowMessage,
+		Subscriber: subscribeToWindowMessage,
 		Payload: windowMessageProps{
 			Type:         windowMessageSelectTale,
-			Dispatchable: dispatchable,
+			Dispatchable: selectTaleAction[S](),
 		},
 	}
 }
 
-func SelectTale[S hypp.State](s *fairytale.State[S], payload hypp.Payload) hypp.Dispatchable {
-	raw := payload.(json.RawMessage)
-	var path []int
-	if err := json.Unmarshal(raw, &path); err != nil {
-		panic(fmt.Errorf("fairy: cannot unmarshal selectTale data '%s': %w", string(raw), err))
+func selectTaleAction[S hypp.State]() hypp.Action[*fairytale.State[S]] {
+	return func(s *fairytale.State[S], payload hypp.Payload) hypp.Dispatchable {
+		raw := payload.(json.RawMessage)
+		var path []int
+		if err := json.Unmarshal(raw, &path); err != nil {
+			panic(fmt.Errorf("fairy: cannot unmarshal selectTale data '%s': %w", string(raw), err))
+		}
+		if equalPaths(path, s.Current()) {
+			return s
+		}
+		newState := s.Clone()
+		newState.SetCurrent(path)
+		return newState
 	}
-	if equalPaths(path, s.Current()) {
-		return s
-	}
-	newState := s.Clone()
-	newState.SetCurrent(path)
-	return newState
 }

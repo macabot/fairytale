@@ -23,7 +23,7 @@ func IFrameSizeSelect[S hypp.State](selectedSize fairytale.IFrameSize) *hypp.VNo
 		hypp.Text("Size"),
 		html.Select(
 			hypp.HProps{
-				"onchange": hypp.Action[*fairytale.State[S]](dispatch.SelectIFrameSize[S]),
+				"onchange": dispatch.SelectIFrameSizeAction[S](),
 			},
 			options...,
 		),

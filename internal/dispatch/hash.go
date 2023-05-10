@@ -9,7 +9,7 @@ import (
 	"github.com/macabot/hypp"
 )
 
-func OnHashChange[S hypp.State]() hypp.Subscription {
+func HashChangeSubscription[S hypp.State]() hypp.Subscription {
 	return hypp.Subscription{
 		Subscriber: func(dispatch hypp.Dispatch, _ hypp.Payload) hypp.Unsubscribe {
 			listener := func(_ hypp.Event) {
@@ -18,7 +18,7 @@ func OnHashChange[S hypp.State]() hypp.Subscription {
 				if err != nil {
 					panic(err)
 				}
-				dispatch(updateCurrentFromLocation[S](u), nil)
+				dispatch(updateCurrentFromLocationAction[S](u), nil)
 			}
 			id := driver.Window.AddEventListener("hashchange", listener)
 			return func() {
@@ -28,7 +28,7 @@ func OnHashChange[S hypp.State]() hypp.Subscription {
 	}
 }
 
-func updateCurrentFromLocation[S hypp.State](u *url.URL) hypp.Action[*fairytale.State[S]] {
+func updateCurrentFromLocationAction[S hypp.State](u *url.URL) hypp.Action[*fairytale.State[S]] {
 	return func(s *fairytale.State[S], _ hypp.Payload) hypp.Dispatchable {
 		newState := s.Clone()
 		newState.UpdateCurrentFromURL(u)

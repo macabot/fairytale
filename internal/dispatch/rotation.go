@@ -1,41 +1,24 @@
 package dispatch
 
 import (
-	"fmt"
-
 	"github.com/macabot/fairytale"
 	"github.com/macabot/hypp"
 )
 
-func SelectRotation[S hypp.State](s *fairytale.State[S], payload hypp.Payload) hypp.Dispatchable {
-	event := payload.(hypp.Event)
-	value := event.Target().Value()
-	rotation := mustRotationFromString(value)
+func SelectRotationAction[S hypp.State]() hypp.Action[*fairytale.State[S]] {
+	return func(s *fairytale.State[S], payload hypp.Payload) hypp.Dispatchable {
+		event := payload.(hypp.Event)
+		value := event.Target().Value()
+		rotation := fairytale.MustRotationFromString(value)
 
-	settings := s.Settings()
-	settings.Rotation = rotation
-	newState := s.Clone()
-	newState.SetSettings(settings)
-	postWindowMessageToIFrame(windowMessage[struct{}]{
-		Type: windowMessageRefreshApp,
-		Data: struct{}{},
-	})
-	return newState
-}
-
-func mustRotationFromString(s string) fairytale.Rotation {
-	rotation, err := rotationFromString(s)
-	if err != nil {
-		panic(err)
+		settings := s.Settings()
+		settings.Rotation = rotation
+		newState := s.Clone()
+		newState.SetSettings(settings)
+		postWindowMessageToIFrame(windowMessage[struct{}]{
+			Type: windowMessageRefreshApp,
+			Data: struct{}{},
+		})
+		return newState
 	}
-	return rotation
-}
-
-func rotationFromString(s string) (fairytale.Rotation, error) {
-	for _, rotation := range fairytale.Rotations {
-		if rotation.String() == s {
-			return rotation, nil
-		}
-	}
-	return -1, fmt.Errorf("cannot create rotation from string '%s'", s)
 }

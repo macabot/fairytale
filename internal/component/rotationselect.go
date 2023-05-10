@@ -23,7 +23,7 @@ func RotationSelect[S hypp.State](selectedRotation fairytale.Rotation) *hypp.VNo
 		hypp.Text("Rotation"),
 		html.Select(
 			hypp.HProps{
-				"onchange": hypp.Action[*fairytale.State[S]](dispatch.SelectRotation[S]),
+				"onchange": dispatch.SelectRotationAction[S](),
 			},
 			options...,
 		),

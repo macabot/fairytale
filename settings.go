@@ -18,6 +18,23 @@ var IFrameSizes = [...]IFrameSize{
 	Size_iPhone_11_Pro,
 }
 
+func MustIFrameSizeFromString(s string) IFrameSize {
+	size, err := IFrameSizeFromString(s)
+	if err != nil {
+		panic(err)
+	}
+	return size
+}
+
+func IFrameSizeFromString(s string) (IFrameSize, error) {
+	for _, size := range IFrameSizes {
+		if size.String() == s {
+			return size, nil
+		}
+	}
+	return [2]int{}, fmt.Errorf("cannot create iFrameSize from string '%s'", s)
+}
+
 func (i *IFrameSize) Swap() {
 	i[0], i[1] = i[1], i[0]
 }
@@ -51,6 +68,23 @@ const (
 var Rotations = [...]Rotation{
 	Portrait,
 	Landscape,
+}
+
+func MustRotationFromString(s string) Rotation {
+	rotation, err := RotationFromString(s)
+	if err != nil {
+		panic(err)
+	}
+	return rotation
+}
+
+func RotationFromString(s string) (Rotation, error) {
+	for _, rotation := range Rotations {
+		if rotation.String() == s {
+			return rotation, nil
+		}
+	}
+	return -1, fmt.Errorf("cannot create rotation from string '%s'", s)
 }
 
 func (r Rotation) String() string {
