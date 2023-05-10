@@ -23,7 +23,7 @@ type SelectOption[T any] struct {
 func (s SelectOption[T]) Render(selected bool) *hypp.VNode {
 	b, err := json.Marshal(s.Value)
 	if err != nil {
-		panic(fmt.Errorf("fairy: cannot JSON marshal SelectOption value of type %T", s.Value))
+		panic(fmt.Errorf("fairytale: cannot JSON marshal SelectOption value of type %T", s.Value))
 	}
 	return html.Option(
 		hypp.HProps{
@@ -95,7 +95,7 @@ func (s Select[S, T]) UpdateFromEvent(state S, event hypp.Event) hypp.Dispatchab
 	value := event.Target().Value()
 	var t T
 	if err := json.Unmarshal([]byte(value), &t); err != nil {
-		panic(fmt.Errorf("fairy: SelectControl cannot JSON unmarshal event data '%s' to type %T: %w", value, t, err))
+		panic(fmt.Errorf("fairytale: SelectControl cannot JSON unmarshal event data '%s' to type %T: %w", value, t, err))
 	}
 	return s.update(state, t)
 }
@@ -105,7 +105,7 @@ func (s Select[S, T]) UpdateFromMessage(
 ) hypp.Dispatchable {
 	var t T
 	if err := json.Unmarshal(data, &t); err != nil {
-		panic(fmt.Errorf("fairy: SelectControl cannot JSON unmarshal message data '%s' to type %T: %w", data, t, err))
+		panic(fmt.Errorf("fairytale: SelectControl cannot JSON unmarshal message data '%s' to type %T: %w", data, t, err))
 	}
 	return s.update(state, t)
 }
@@ -163,7 +163,7 @@ func (c Checkbox[S]) UpdateFromMessage(
 ) hypp.Dispatchable {
 	var checked bool
 	if err := json.Unmarshal(data, &checked); err != nil {
-		panic(fmt.Errorf("fairytale/control: Checkbox cannot JSON unmarshal data '%s' to type %T: %w", data, checked, err))
+		panic(fmt.Errorf("fairytale: Checkbox cannot JSON unmarshal data '%s' to type %T: %w", data, checked, err))
 	}
 	return c.update(state, checked)
 }
@@ -207,7 +207,7 @@ func (n *NumberInput[S, N]) WithMax(max N) *NumberInput[S, N] {
 func (n NumberInput[S, N]) parseNumber(b []byte) N {
 	var number N
 	if err := json.Unmarshal(b, &number); err != nil {
-		panic(fmt.Errorf("fairytale/control: NumberInput cannot parse '%s' as type %T: %w", b, number, err))
+		panic(fmt.Errorf("fairytale: NumberInput cannot parse '%s' as type %T: %w", b, number, err))
 	}
 	return number
 }
@@ -329,7 +329,7 @@ func (t TextInput[S]) UpdateFromMessage(
 ) hypp.Dispatchable {
 	var text string
 	if err := json.Unmarshal(data, &text); err != nil {
-		panic(fmt.Errorf("fairytale/control: TextInput cannot parse '%s' as type %T: %w", data, text, err))
+		panic(fmt.Errorf("fairytale: TextInput cannot parse '%s' as type %T: %w", data, text, err))
 	}
 	return t.update(state, text)
 }

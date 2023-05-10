@@ -36,7 +36,7 @@ func AppPage[S hypp.State](s *fairytale.State[S]) *hypp.VNode {
 	case fairytale.TaleAsBody:
 		body = currentTaleNode
 	default:
-		panic(fmt.Errorf("invalid target %v", target))
+		panic(fmt.Errorf("fairytale: invalid target %v", target))
 	}
 	return html.Html(
 		nil,

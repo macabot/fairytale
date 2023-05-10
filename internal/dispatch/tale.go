@@ -23,7 +23,7 @@ func appendTaleEventAction[S hypp.State]() hypp.Action[*fairytale.State[S]] {
 		raw := payload.(json.RawMessage)
 		var event fairytale.TaleEvent[S]
 		if err := json.Unmarshal(raw, &event); err != nil {
-			panic(fmt.Errorf("fairy: cannot unmarshal appendTaleEvent data '%s': %w", string(raw), err))
+			panic(fmt.Errorf("fairytale: cannot unmarshal appendTaleEvent data '%s': %w", string(raw), err))
 		}
 
 		newState := s.Clone()
@@ -107,7 +107,7 @@ func selectTaleAction[S hypp.State]() hypp.Action[*fairytale.State[S]] {
 		raw := payload.(json.RawMessage)
 		var path []int
 		if err := json.Unmarshal(raw, &path); err != nil {
-			panic(fmt.Errorf("fairy: cannot unmarshal selectTale data '%s': %w", string(raw), err))
+			panic(fmt.Errorf("fairytale: cannot unmarshal selectTale data '%s': %w", string(raw), err))
 		}
 		if equalPaths(path, s.Current()) {
 			return s

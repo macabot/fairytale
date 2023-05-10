@@ -54,7 +54,7 @@ func operateControlAction[S hypp.State]() hypp.Action[*fairytale.State[S]] {
 		raw := payload.(json.RawMessage)
 		var data operateControlData[json.RawMessage]
 		if err := json.Unmarshal(raw, &data); err != nil {
-			panic(fmt.Errorf("fairy: cannot unmarshal operateControl data '%s': %w", string(raw), err))
+			panic(fmt.Errorf("fairytale: cannot unmarshal operateControl data '%s': %w", string(raw), err))
 		}
 		tale := s.GetTale(data.TalePath)
 		control := tale.Controls()[data.ControlIndex]

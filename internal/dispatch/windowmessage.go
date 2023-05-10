@@ -20,7 +20,7 @@ func subscribeToWindowMessage(dispatch hypp.Dispatch, payload hypp.Payload) hypp
 		data := event.EscapeToValue().Get("data").String()
 		var m windowMessage[json.RawMessage]
 		if err := json.Unmarshal([]byte(data), &m); err != nil {
-			panic(fmt.Errorf("Cannot unmarshal message with data: %s", data))
+			panic(fmt.Errorf("fairytale: cannot unmarshal message with data: %s", data))
 		}
 		if m.Type == props.Type {
 			dispatch(props.Dispatchable, m.Data)
@@ -51,7 +51,7 @@ func postWindowMessageToIFrame[T any](m windowMessage[T]) {
 	iframeEl := js.Global().Get("document").Call("querySelector", "iframe")
 	b, err := json.Marshal(m)
 	if err != nil {
-		panic(fmt.Errorf("fairy: cannot JSON marshal message with type '%s': %w", m.Type, err))
+		panic(fmt.Errorf("fairytale: cannot JSON marshal message with type '%s': %w", m.Type, err))
 	}
 	iframeEl.Get("contentWindow").Call("postMessage", string(b), origin)
 }
@@ -61,7 +61,7 @@ func postWindowMessageToTopFrame[T any](m windowMessage[T]) {
 	top := js.Global().Get("top")
 	b, err := json.Marshal(m)
 	if err != nil {
-		panic(fmt.Errorf("fairy: cannot JSON marshal message with type '%s': %w", m.Type, err))
+		panic(fmt.Errorf("fairytale: cannot JSON marshal message with type '%s': %w", m.Type, err))
 	}
 	top.Call("postMessage", string(b), origin)
 }

@@ -32,7 +32,7 @@ func IFrameSizeFromString(s string) (IFrameSize, error) {
 			return size, nil
 		}
 	}
-	return [2]int{}, fmt.Errorf("cannot create iFrameSize from string '%s'", s)
+	return [2]int{}, fmt.Errorf("fairytale: cannot create iFrameSize from string '%s'", s)
 }
 
 func (i *IFrameSize) Swap() {
@@ -50,7 +50,7 @@ func (i IFrameSize) String() string {
 	case Size_iPhone_11_Pro:
 		return "iPhone 11 Pro"
 	default:
-		panic(fmt.Errorf("unknown IFrameSize: %d, %d", i[0], i[1]))
+		panic(fmt.Errorf("fairytale: unknown IFrameSize: %d, %d", i[0], i[1]))
 	}
 }
 
@@ -84,7 +84,7 @@ func RotationFromString(s string) (Rotation, error) {
 			return rotation, nil
 		}
 	}
-	return -1, fmt.Errorf("cannot create rotation from string '%s'", s)
+	return -1, fmt.Errorf("fairytale: cannot create rotation from string '%s'", s)
 }
 
 func (r Rotation) String() string {
@@ -94,7 +94,7 @@ func (r Rotation) String() string {
 	case Landscape:
 		return "Landscape"
 	default:
-		panic(fmt.Errorf("unknown rotation: %d", r))
+		panic(fmt.Errorf("fairytale: unknown rotation: %d", r))
 	}
 }
 
@@ -108,5 +108,5 @@ func rotationFromSlug(s string) (Rotation, error) {
 			return rotation, nil
 		}
 	}
-	return -1, fmt.Errorf("cannot create rotation from slug '%s'", s)
+	return -1, fmt.Errorf("fairytale: cannot create rotation from slug '%s'", s)
 }
