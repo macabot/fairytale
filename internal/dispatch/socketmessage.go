@@ -21,14 +21,14 @@ func subscribeToSocketMessage(dispatch hypp.Dispatch, _ hypp.Payload) hypp.Unsub
 	href := window.Get("location").Get("href").String()
 	u, err := url.Parse(href)
 	if err != nil {
-		panic(fmt.Errorf("Cannot parse href '%s' as url", href))
+		panic(fmt.Errorf("fairytale: cannot parse href '%s' as url", href))
 	}
 	if u.Scheme == "http" {
 		u.Scheme = "ws"
 	} else if u.Scheme == "https" {
 		u.Scheme = "wss"
 	} else {
-		panic(fmt.Errorf("href has invalid scheme '%s'", u.Scheme))
+		panic(fmt.Errorf("fairytale: href has invalid scheme '%s'", u.Scheme))
 	}
 
 	u.Path = "/ws"
@@ -53,7 +53,7 @@ func subscribeToSocketMessage(dispatch hypp.Dispatch, _ hypp.Payload) hypp.Unsub
 		fmt.Printf("[WebSocket] Received message event with data '%s'.\n", data)
 		var m model.SocketMessage
 		if err := json.Unmarshal([]byte(data), &m); err != nil {
-			panic(fmt.Errorf("Cannot unmarshal message with data: %s", data))
+			panic(fmt.Errorf("fairytale: cannot unmarshal message with data: %s", data))
 		}
 		switch m.Type {
 		case model.SocketMessageReload:

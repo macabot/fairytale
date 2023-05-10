@@ -5,7 +5,7 @@ import (
 	"github.com/macabot/hypp"
 )
 
-func SelectPanelTab[S hypp.State](i int) hypp.Action[*fairytale.State[S]] {
+func SelectPanelTabAction[S hypp.State](i int) hypp.Action[*fairytale.State[S]] {
 	return func(s *fairytale.State[S], _ hypp.Payload) hypp.Dispatchable {
 		newState := s.Clone()
 		newState.SetSelectedPanelTab(i)

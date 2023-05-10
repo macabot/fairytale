@@ -67,8 +67,8 @@ func runAdmin[S hypp.State](s *fairytale.State[S]) {
 		Node:   jsd.Node(el),
 		Subscriptions: func(_ *fairytale.State[S]) []hypp.Subscription {
 			return []hypp.Subscription{
-				dispatch.OnTaleEvent(hypp.Action[*fairytale.State[S]](dispatch.AppendTaleEvent[S])),
-				dispatch.OnHashChange[S](),
+				dispatch.TaleEventSubscription[S](),
+				dispatch.HashChangeSubscription[S](),
 				dispatch.SocketMessageSubscription(),
 			}
 		},
@@ -87,12 +87,18 @@ func runApp[S hypp.State](s *fairytale.State[S]) {
 		Init:   s,
 		View:   component.AppPage[S],
 		Node:   jsd.Node(el),
-		Subscriptions: func(_ *fairytale.State[S]) []hypp.Subscription {
-			return []hypp.Subscription{
-				dispatch.OnSelectTale(hypp.Action[*fairytale.State[S]](dispatch.SelectTale[S])),
-				dispatch.OnOperateControl(hypp.Action[*fairytale.State[S]](dispatch.OperateControl[S])),
-				dispatch.OnRefreshApp(hypp.Action[*fairytale.State[S]](dispatch.RefreshApp[S])),
+		Subscriptions: func(s *fairytale.State[S]) []hypp.Subscription {
+			subscriptions := []hypp.Subscription{
+				dispatch.SelectTaleSubscription[S](),
+				dispatch.OperateControlSubscription[S](),
+				dispatch.RefreshAppSubscription[S](),
 			}
+			talePaths := s.TalePaths()
+			for _, path := range talePaths {
+				tale := s.GetTale(path)
+				subscriptions = append(subscriptions, dispatch.TaleStateSubscription(tale, path))
+			}
+			return subscriptions
 		},
 	})
 

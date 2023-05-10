@@ -24,7 +24,7 @@ func PanelTab[S hypp.State](i int, name string, selected bool) *hypp.VNode {
 				"panel-tab": true,
 				"selected":  selected,
 			},
-			"onclick": dispatch.SelectPanelTab[S](i),
+			"onclick": dispatch.SelectPanelTabAction[S](i),
 		},
 		hypp.Text(name),
 	)

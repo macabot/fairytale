@@ -23,7 +23,7 @@ type SelectOption[T any] struct {
 func (s SelectOption[T]) Render(selected bool) *hypp.VNode {
 	b, err := json.Marshal(s.Value)
 	if err != nil {
-		panic(fmt.Errorf("fairy: cannot JSON marshal SelectOption value of type %T", s.Value))
+		panic(fmt.Errorf("fairytale: cannot JSON marshal SelectOption value of type %T", s.Value))
 	}
 	return html.Option(
 		hypp.HProps{
@@ -41,7 +41,7 @@ var _ fairytale.Control[hypp.EmptyState] = &Select[hypp.EmptyState, struct{}]{}
 // of the available options.
 type Select[S hypp.State, T any] struct {
 	label         string
-	update        func(S, T) S
+	update        func(S, T) hypp.Dispatchable
 	selectedIndex func(S) int
 	options       []SelectOption[T]
 }
@@ -49,7 +49,7 @@ type Select[S hypp.State, T any] struct {
 // NewSelect creates a new Select.
 func NewSelect[S hypp.State, T any](
 	label string,
-	update func(S, T) S,
+	update func(S, T) hypp.Dispatchable,
 	selectedIndex func(S) int,
 	options []SelectOption[T],
 ) *Select[S, T] {
@@ -83,7 +83,7 @@ func (s Select[S, T]) Render(
 		hypp.Text(s.label),
 		html.Select(
 			hypp.HProps{
-				"onchange": dispatch.OnChangeControl[S](talePath, controlIndex, func(event hypp.Event) json.RawMessage {
+				"onchange": dispatch.ChangeControlAction[S](talePath, controlIndex, func(event hypp.Event) json.RawMessage {
 					return []byte(event.Target().Value())
 				}),
 			},
@@ -91,21 +91,21 @@ func (s Select[S, T]) Render(
 		),
 	)
 }
-func (s Select[S, T]) UpdateFromEvent(state S, event hypp.Event) S {
+func (s Select[S, T]) UpdateFromEvent(state S, event hypp.Event) hypp.Dispatchable {
 	value := event.Target().Value()
 	var t T
 	if err := json.Unmarshal([]byte(value), &t); err != nil {
-		panic(fmt.Errorf("fairy: SelectControl cannot JSON unmarshal event data '%s' to type %T: %w", value, t, err))
+		panic(fmt.Errorf("fairytale: SelectControl cannot JSON unmarshal event data '%s' to type %T: %w", value, t, err))
 	}
 	return s.update(state, t)
 }
 func (s Select[S, T]) UpdateFromMessage(
 	state S,
 	data json.RawMessage,
-) S {
+) hypp.Dispatchable {
 	var t T
 	if err := json.Unmarshal(data, &t); err != nil {
-		panic(fmt.Errorf("fairy: SelectControl cannot JSON unmarshal message data '%s' to type %T: %w", data, t, err))
+		panic(fmt.Errorf("fairytale: SelectControl cannot JSON unmarshal message data '%s' to type %T: %w", data, t, err))
 	}
 	return s.update(state, t)
 }
@@ -146,24 +146,24 @@ func (c Checkbox[S]) Render(
 			hypp.HProps{
 				"type":    "checkbox",
 				"checked": c.checked(state),
-				"onchange": dispatch.OnChangeControl[S](path, controlIndex, func(event hypp.Event) bool {
+				"onchange": dispatch.ChangeControlAction[S](path, controlIndex, func(event hypp.Event) bool {
 					return event.EscapeToValue().Get("target").Get("checked").Bool()
 				}),
 			},
 		),
 	)
 }
-func (c Checkbox[S]) UpdateFromEvent(state S, event hypp.Event) S {
+func (c Checkbox[S]) UpdateFromEvent(state S, event hypp.Event) hypp.Dispatchable {
 	checked := event.EscapeToValue().Get("target").Get("checked").Bool()
 	return c.update(state, checked)
 }
 func (c Checkbox[S]) UpdateFromMessage(
 	state S,
 	data json.RawMessage,
-) S {
+) hypp.Dispatchable {
 	var checked bool
 	if err := json.Unmarshal(data, &checked); err != nil {
-		panic(fmt.Errorf("fairytale/control: Checkbox cannot JSON unmarshal data '%s' to type %T: %w", data, checked, err))
+		panic(fmt.Errorf("fairytale: Checkbox cannot JSON unmarshal data '%s' to type %T: %w", data, checked, err))
 	}
 	return c.update(state, checked)
 }
@@ -207,7 +207,7 @@ func (n *NumberInput[S, N]) WithMax(max N) *NumberInput[S, N] {
 func (n NumberInput[S, N]) parseNumber(b []byte) N {
 	var number N
 	if err := json.Unmarshal(b, &number); err != nil {
-		panic(fmt.Errorf("fairytale/control: NumberInput cannot parse '%s' as type %T: %w", b, number, err))
+		panic(fmt.Errorf("fairytale: NumberInput cannot parse '%s' as type %T: %w", b, number, err))
 	}
 	return number
 }
@@ -220,7 +220,7 @@ func (n NumberInput[S, N]) Render(
 	inputProps := hypp.HProps{
 		"type":  "number",
 		"value": fmt.Sprint(n.value(state)),
-		"onchange": dispatch.OnChangeControl[S](path, controlIndex, func(event hypp.Event) N {
+		"onchange": dispatch.ChangeControlAction[S](path, controlIndex, func(event hypp.Event) N {
 			return n.parseNumber([]byte(event.Target().Value()))
 		}),
 	}
@@ -250,7 +250,7 @@ func (n NumberInput[S, N]) keepInRange(number N) N {
 func (n NumberInput[S, N]) UpdateFromEvent(
 	state S,
 	event hypp.Event,
-) S {
+) hypp.Dispatchable {
 	number := n.parseNumber([]byte(event.Target().Value()))
 	number = n.keepInRange(number)
 	return n.update(state, number)
@@ -259,7 +259,7 @@ func (n NumberInput[S, N]) UpdateFromEvent(
 func (n NumberInput[S, N]) UpdateFromMessage(
 	state S,
 	data json.RawMessage,
-) S {
+) hypp.Dispatchable {
 	number := n.parseNumber(data)
 	number = n.keepInRange(number)
 	return n.update(state, number)
@@ -301,7 +301,7 @@ func (t TextInput[S]) Render(state S, path []int, controlIndex int) *hypp.VNode 
 	inputProps := hypp.HProps{
 		"type":  "text",
 		"value": t.value(state),
-		"oninput": dispatch.OnChangeControl[S](path, controlIndex, func(event hypp.Event) string {
+		"oninput": dispatch.ChangeControlAction[S](path, controlIndex, func(event hypp.Event) string {
 			return event.Target().Value()
 		}),
 	}
@@ -318,7 +318,7 @@ func (t TextInput[S]) Render(state S, path []int, controlIndex int) *hypp.VNode 
 	)
 }
 
-func (t TextInput[S]) UpdateFromEvent(state S, event hypp.Event) S {
+func (t TextInput[S]) UpdateFromEvent(state S, event hypp.Event) hypp.Dispatchable {
 	text := event.Target().Value()
 	return t.update(state, text)
 }
@@ -326,10 +326,10 @@ func (t TextInput[S]) UpdateFromEvent(state S, event hypp.Event) S {
 func (t TextInput[S]) UpdateFromMessage(
 	state S,
 	data json.RawMessage,
-) S {
+) hypp.Dispatchable {
 	var text string
 	if err := json.Unmarshal(data, &text); err != nil {
-		panic(fmt.Errorf("fairytale/control: TextInput cannot parse '%s' as type %T: %w", data, text, err))
+		panic(fmt.Errorf("fairytale: TextInput cannot parse '%s' as type %T: %w", data, text, err))
 	}
 	return t.update(state, text)
 }
@@ -360,7 +360,7 @@ func (c Button[S]) Render(
 	return html.Button(
 		hypp.HProps{
 			"type": "button",
-			"onclick": dispatch.OnChangeControl[S](
+			"onclick": dispatch.ChangeControlAction[S](
 				path,
 				controlIndex,
 				func(_ hypp.Event) struct{} {
@@ -372,10 +372,10 @@ func (c Button[S]) Render(
 	)
 }
 
-func (c Button[S]) UpdateFromEvent(state S, _ hypp.Event) S {
+func (c Button[S]) UpdateFromEvent(state S, _ hypp.Event) hypp.Dispatchable {
 	return c.update(state)
 }
 
-func (c Button[S]) UpdateFromMessage(state S, _ json.RawMessage) S {
+func (c Button[S]) UpdateFromMessage(state S, _ json.RawMessage) hypp.Dispatchable {
 	return c.update(state)
 }
