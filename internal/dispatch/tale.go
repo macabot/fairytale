@@ -29,7 +29,6 @@ func appendTaleEventAction[S hypp.State]() hypp.Action[*fairytale.State[S]] {
 		newState := s.Clone()
 		tale := newState.GetTale(event.Path)
 		tale.SetState(event.State)
-		tale.AppendEvent(event)
 		return newState
 	}
 }
@@ -43,7 +42,6 @@ func TaleStateSubscription[S hypp.State](tale *fairytale.Tale[S], path []int) hy
 						Type: windowMessageTaleEvent,
 						Data: fairytale.TaleEvent[S]{
 							Path:  path,
-							Label: "???", // FIXME
 							State: taleState,
 						},
 					})

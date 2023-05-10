@@ -31,21 +31,19 @@ type Control[S hypp.State] interface {
 
 type TaleEvent[S hypp.State] struct {
 	Path  []int
-	Label string
 	State S
 }
 
-// Tale is a Node that let's you develop and document a component.
+// Tale is a Node that lets you develop and document a component.
 type Tale[S hypp.State] struct {
 	name     string
 	slug     string
-	state    S                   // S
-	view     func(S) *hypp.VNode // func(S) *hypp.VNode
+	state    S
+	view     func(S) *hypp.VNode
 	dispatch func(hypp.Dispatchable, hypp.Payload)
 
 	controls        []Control[S]
 	settings        TaleSettings
-	events          []TaleEvent[S]
 	stateSubscriber func(S)
 }
 
@@ -68,7 +66,7 @@ func New[S hypp.State](
 			dispatch(v(tale.state, payload), nil)
 		case hypp.ActionAndPayload[S]:
 			dispatch(v.Action, v.Payload)
-		case S: // State
+		case S:
 			tale.SetState(v)
 		default:
 			panic(fmt.Errorf("fairytale: dispatchable has unexpected type '%[1]T'. Expected type 'StateAndEffects[%[2]T]', 'Action[%[2]T]', 'ActionAndPayload[%[2]T]' or '%[2]T'", dispatchable, tale.state))
@@ -94,15 +92,9 @@ func (t Tale[S]) View() *hypp.VNode      { return t.view(t.state) }
 func (t Tale[S]) Controls() []Control[S] { return t.controls }
 func (t Tale[S]) State() S               { return t.state }
 func (t Tale[S]) Settings() TaleSettings { return t.settings }
-func (t *Tale[S]) ClearEvents()          { t.events = nil }
-func (t Tale[S]) Events() []TaleEvent[S] { return t.events }
 
 func (t *Tale[S]) SetStateSubscriber(stateSubscriber func(S)) {
 	t.stateSubscriber = stateSubscriber
-}
-
-func (t *Tale[S]) AppendEvent(event TaleEvent[S]) {
-	t.events = append(t.events, event)
 }
 
 func (t *Tale[S]) Dispatch(dispatchable hypp.Dispatchable, payload hypp.Payload) {

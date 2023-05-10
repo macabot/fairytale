@@ -73,7 +73,3 @@ iframe {
 .panel-tab.selected {
     text-decoration: underline;
 }
-
-.tale-events ul {
-    list-style-type: disc;
-}
