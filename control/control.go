@@ -39,25 +39,25 @@ var _ fairytale.Control[hypp.EmptyState] = &Select[hypp.EmptyState, struct{}]{}
 
 // Select is a Control that lets you update the state by selecting one
 // of the available options.
-type Select[S hypp.State, T any] struct {
-	label         string
-	update        func(S, T) hypp.Dispatchable
-	selectedIndex func(S) int
-	options       []SelectOption[T]
+type Select[S hypp.State, T comparable] struct {
+	label   string
+	update  func(S, T) hypp.Dispatchable
+	value   func(S) T
+	options []SelectOption[T]
 }
 
 // NewSelect creates a new Select.
-func NewSelect[S hypp.State, T any](
+func NewSelect[S hypp.State, T comparable](
 	label string,
 	update func(S, T) hypp.Dispatchable,
-	selectedIndex func(S) int,
+	value func(S) T,
 	options []SelectOption[T],
 ) *Select[S, T] {
 	return &Select[S, T]{
-		label:         label,
-		update:        update,
-		selectedIndex: selectedIndex,
-		options:       options,
+		label:   label,
+		update:  update,
+		value:   value,
+		options: options,
 	}
 }
 
@@ -67,14 +67,21 @@ func (s Select[S, T]) Render(
 	talePath []int,
 	controlIndex int,
 ) *hypp.VNode {
-	selectedIndex := s.selectedIndex(state)
+	value := s.value(state)
+	selectedIndex := -1
+	for i, option := range s.options {
+		if option.Value == value {
+			selectedIndex = i
+			break
+		}
+	}
 	options := make([]*hypp.VNode, len(s.options))
 	for i, option := range s.options {
 		options[i] = option.Render(i == selectedIndex)
 	}
-	if selectedIndex < 0 || selectedIndex >= len(s.options) {
+	if selectedIndex < 0 {
 		options = append(options, SelectOption[T]{
-			Label:    "[Selected index out of range]",
+			Label:    "[Option not found]",
 			disabled: true,
 		}.Render(true))
 	}
