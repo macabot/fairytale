@@ -12,7 +12,8 @@ import (
 )
 
 type Options struct {
-	Assets []*hypp.VNode
+	Assets   []*hypp.VNode
+	Settings fairytale.AdminSettings
 }
 
 // Run fairytale.
@@ -34,6 +35,7 @@ func Run[S hypp.State](options *Options, nodes ...fairytale.Node[S]) {
 	s := fairytale.NewState[S](tree)
 	if options != nil {
 		s.SetAssets(options.Assets)
+		s.SetSettings(options.Settings)
 	}
 
 	top := js.Global().Get("top")
