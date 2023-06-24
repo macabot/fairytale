@@ -5,14 +5,14 @@ import (
 	"github.com/macabot/hypp"
 )
 
-func SelectRotationAction[S hypp.State]() hypp.Action[*fairytale.State[S]] {
+func SelectOrientationAction[S hypp.State]() hypp.Action[*fairytale.State[S]] {
 	return func(s *fairytale.State[S], payload hypp.Payload) hypp.Dispatchable {
 		event := payload.(hypp.Event)
 		value := event.Target().Value()
-		rotation := fairytale.MustRotationFromString(value)
+		orientation := fairytale.MustOrientationFromString(value)
 
 		settings := s.Settings()
-		settings.Rotation = rotation
+		settings.Orientation = orientation
 		newState := s.Clone()
 		newState.SetSettings(settings)
 		postWindowMessageToIFrame(windowMessage[struct{}]{

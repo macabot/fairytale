@@ -10,6 +10,6 @@ func Settings[S hypp.State](settings fairytale.AdminSettings) *hypp.VNode {
 	return html.Div(
 		hypp.HProps{"class": "settings"},
 		IFrameSizeSelect[S](settings.IFrameSize),
-		RotationSelect[S](settings.Rotation),
+		OrientationSelect[S](settings.Orientation),
 	)
 }

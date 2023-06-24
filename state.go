@@ -9,8 +9,8 @@ import (
 )
 
 type AdminSettings struct {
-	IFrameSize IFrameSize
-	Rotation   Rotation
+	IFrameSize  IFrameSize
+	Orientation Orientation
 }
 
 type State[S hypp.State] struct {

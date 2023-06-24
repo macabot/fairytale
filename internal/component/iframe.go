@@ -10,7 +10,7 @@ import (
 
 func IFrame[S hypp.State](currentTale *fairytale.Tale[S], settings fairytale.AdminSettings) *hypp.VNode {
 	size := settings.IFrameSize
-	if settings.Rotation == fairytale.Landscape {
+	if settings.Orientation == fairytale.Landscape {
 		size.Swap()
 	}
 	divProps := hypp.HProps{"class": "current-tale"}

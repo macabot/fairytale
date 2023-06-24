@@ -7,23 +7,23 @@ import (
 	"github.com/macabot/hypp/tag/html"
 )
 
-func RotationSelect[S hypp.State](selectedRotation fairytale.Rotation) *hypp.VNode {
-	options := make([]*hypp.VNode, len(fairytale.Rotations))
-	for i, rotation := range fairytale.Rotations {
+func OrientationSelect[S hypp.State](selectedOrientation fairytale.Orientation) *hypp.VNode {
+	options := make([]*hypp.VNode, len(fairytale.Orientations))
+	for i, orientation := range fairytale.Orientations {
 		options[i] = html.Option(
 			hypp.HProps{
-				"value":    rotation.String(),
-				"selected": rotation == selectedRotation,
+				"value":    orientation.String(),
+				"selected": orientation == selectedOrientation,
 			},
-			hypp.Text(rotation.String()),
+			hypp.Text(orientation.String()),
 		)
 	}
 	return html.Label(
 		nil,
-		hypp.Text("Rotation"),
+		hypp.Text("Orientation"),
 		html.Select(
 			hypp.HProps{
-				"onchange": dispatch.SelectRotationAction[S](),
+				"onchange": dispatch.SelectOrientationAction[S](),
 			},
 			options...,
 		),

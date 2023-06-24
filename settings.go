@@ -58,55 +58,55 @@ func (i IFrameSize) Slug() string {
 	return slug.Make(i.String())
 }
 
-type Rotation int
+type Orientation int
 
 const (
-	Portrait Rotation = iota
+	Portrait Orientation = iota
 	Landscape
 )
 
-var Rotations = [...]Rotation{
+var Orientations = [...]Orientation{
 	Portrait,
 	Landscape,
 }
 
-func MustRotationFromString(s string) Rotation {
-	rotation, err := RotationFromString(s)
+func MustOrientationFromString(s string) Orientation {
+	orientation, err := OrientationFromString(s)
 	if err != nil {
 		panic(err)
 	}
-	return rotation
+	return orientation
 }
 
-func RotationFromString(s string) (Rotation, error) {
-	for _, rotation := range Rotations {
-		if rotation.String() == s {
-			return rotation, nil
+func OrientationFromString(s string) (Orientation, error) {
+	for _, orientation := range Orientations {
+		if orientation.String() == s {
+			return orientation, nil
 		}
 	}
-	return -1, fmt.Errorf("fairytale: cannot create rotation from string '%s'", s)
+	return -1, fmt.Errorf("fairytale: cannot create orientation from string '%s'", s)
 }
 
-func (r Rotation) String() string {
+func (r Orientation) String() string {
 	switch r {
 	case Portrait:
 		return "Portrait"
 	case Landscape:
 		return "Landscape"
 	default:
-		panic(fmt.Errorf("fairytale: unknown rotation: %d", r))
+		panic(fmt.Errorf("fairytale: unknown orientation: %d", r))
 	}
 }
 
-func (r Rotation) Slug() string {
+func (r Orientation) Slug() string {
 	return slug.Make(r.String())
 }
 
-func rotationFromSlug(s string) (Rotation, error) {
-	for _, rotation := range Rotations {
-		if rotation.Slug() == s {
-			return rotation, nil
+func orientationFromSlug(s string) (Orientation, error) {
+	for _, orientation := range Orientations {
+		if orientation.Slug() == s {
+			return orientation, nil
 		}
 	}
-	return -1, fmt.Errorf("fairytale: cannot create rotation from slug '%s'", s)
+	return -1, fmt.Errorf("fairytale: cannot create orientation from slug '%s'", s)
 }
