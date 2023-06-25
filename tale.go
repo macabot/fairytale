@@ -13,6 +13,7 @@ type TaleTarget int
 const (
 	TaleInsideBody TaleTarget = iota
 	TaleAsBody
+	TaleAsHTML
 )
 
 type TaleSettings struct {
