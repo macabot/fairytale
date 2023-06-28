@@ -123,14 +123,14 @@ var _ fairytale.Control[hypp.EmptyState] = &Checkbox[hypp.EmptyState]{}
 // checkbox.
 type Checkbox[S hypp.State] struct {
 	label   string
-	update  func(state S, checked bool) S
+	update  func(state S, checked bool) hypp.Dispatchable
 	checked func(S) bool
 }
 
 // NewCheckbox creates a new Checkbox.
 func NewCheckbox[S hypp.State](
 	label string,
-	update func(S, bool) S,
+	update func(S, bool) hypp.Dispatchable,
 	checked func(S) bool,
 ) *Checkbox[S] {
 	return &Checkbox[S]{
@@ -183,7 +183,7 @@ type Number interface {
 
 type NumberInput[S hypp.State, N Number] struct {
 	label  string
-	update func(state S, value N) S
+	update func(state S, value N) hypp.Dispatchable
 	value  func(S) N
 	min    *N
 	max    *N
@@ -191,7 +191,7 @@ type NumberInput[S hypp.State, N Number] struct {
 
 func NewNumberInput[S hypp.State, N Number](
 	label string,
-	update func(state S, value N) S,
+	update func(state S, value N) hypp.Dispatchable,
 	value func(state S) N,
 ) *NumberInput[S, N] {
 	return &NumberInput[S, N]{
@@ -276,7 +276,7 @@ var _ fairytale.Control[hypp.EmptyState] = &TextInput[hypp.EmptyState]{}
 
 type TextInput[S hypp.State] struct {
 	label     string
-	update    func(state S, text string) S
+	update    func(state S, text string) hypp.Dispatchable
 	value     func(S) string
 	minLength *int
 	maxLength *int
@@ -284,7 +284,7 @@ type TextInput[S hypp.State] struct {
 
 func NewTextInput[S hypp.State](
 	label string,
-	update func(state S, text string) S,
+	update func(state S, text string) hypp.Dispatchable,
 	value func(state S) string,
 ) *TextInput[S] {
 	return &TextInput[S]{
@@ -347,11 +347,14 @@ var _ fairytale.Control[hypp.EmptyState] = &Button[hypp.EmptyState]{}
 // button.
 type Button[S hypp.State] struct {
 	label  string
-	update func(state S) S
+	update func(state S) hypp.Dispatchable
 }
 
 // NewButton creates a new Button.
-func NewButton[S hypp.State](label string, update func(S) S) *Button[S] {
+func NewButton[S hypp.State](
+	label string,
+	update func(S) hypp.Dispatchable,
+) *Button[S] {
 	return &Button[S]{
 		label:  label,
 		update: update,
