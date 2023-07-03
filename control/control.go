@@ -389,3 +389,70 @@ func (c Button[S]) UpdateFromEvent(state S, _ hypp.Event) hypp.Dispatchable {
 func (c Button[S]) UpdateFromMessage(state S, _ json.RawMessage) hypp.Dispatchable {
 	return c.update(state)
 }
+
+var _ fairytale.Control[hypp.EmptyState] = &Textarea[hypp.EmptyState]{}
+
+type Textarea[S hypp.State] struct {
+	label   string
+	update  func(state S, text string) hypp.Dispatchable
+	value   func(state S) string
+	rows    *int
+	columns *int
+}
+
+func NewTextarea[S hypp.State](
+	label string,
+	update func(state S, text string) hypp.Dispatchable,
+	value func(state S) string,
+) *Textarea[S] {
+	return &Textarea[S]{
+		label:  label,
+		update: update,
+		value:  value,
+	}
+}
+
+func (t *Textarea[S]) WithRows(rows int) *Textarea[S] {
+	t.rows = &rows
+	return t
+}
+
+func (t *Textarea[S]) WithColumns(columns int) *Textarea[S] {
+	t.columns = &columns
+	return t
+}
+
+func (t Textarea[S]) Render(state S, path []int, controlIndex int) *hypp.VNode {
+	hProps := hypp.HProps{
+		"oninput": dispatch.ChangeControlAction[S](path, controlIndex, func(event hypp.Event) string {
+			return event.Target().Value()
+		}),
+	}
+	if t.rows != nil {
+		hProps["rows"] = *t.rows
+	}
+	if t.columns != nil {
+		hProps["columns"] = *t.columns
+	}
+	return html.Label(
+		nil,
+		hypp.Text(t.label),
+		html.Textarea(hProps),
+	)
+}
+
+func (t Textarea[S]) UpdateFromEvent(state S, event hypp.Event) hypp.Dispatchable {
+	text := event.Target().Value()
+	return t.update(state, text)
+}
+
+func (t Textarea[S]) UpdateFromMessage(
+	state S,
+	data json.RawMessage,
+) hypp.Dispatchable {
+	var text string
+	if err := json.Unmarshal(data, &text); err != nil {
+		panic(fmt.Errorf("fairytale: Textarea cannot parse '%s' as type %T: %w", data, text, err))
+	}
+	return t.update(state, text)
+}
