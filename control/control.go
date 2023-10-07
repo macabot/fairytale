@@ -9,6 +9,7 @@ import (
 	"github.com/macabot/fairytale/internal/dispatch"
 	"github.com/macabot/hypp"
 	"github.com/macabot/hypp/tag/html"
+	"github.com/macabot/hypp/window"
 	"golang.org/x/exp/constraints"
 )
 
@@ -90,7 +91,7 @@ func (s Select[S, T]) Render(
 		hypp.Text(s.label),
 		html.Select(
 			hypp.HProps{
-				"onchange": dispatch.ChangeControlAction[S](talePath, controlIndex, func(event hypp.Event) json.RawMessage {
+				"onchange": dispatch.ChangeControlAction[S](talePath, controlIndex, func(event window.Event) json.RawMessage {
 					return []byte(event.Target().Value())
 				}),
 			},
@@ -98,7 +99,7 @@ func (s Select[S, T]) Render(
 		),
 	)
 }
-func (s Select[S, T]) UpdateFromEvent(state S, event hypp.Event) hypp.Dispatchable {
+func (s Select[S, T]) UpdateFromEvent(state S, event window.Event) hypp.Dispatchable {
 	value := event.Target().Value()
 	var t T
 	if err := json.Unmarshal([]byte(value), &t); err != nil {
@@ -153,15 +154,15 @@ func (c Checkbox[S]) Render(
 			hypp.HProps{
 				"type":    "checkbox",
 				"checked": c.checked(state),
-				"onchange": dispatch.ChangeControlAction[S](path, controlIndex, func(event hypp.Event) bool {
-					return event.EscapeToValue().Get("target").Get("checked").Bool()
+				"onchange": dispatch.ChangeControlAction[S](path, controlIndex, func(event window.Event) bool {
+					return event.Value.Get("target").Get("checked").Bool()
 				}),
 			},
 		),
 	)
 }
-func (c Checkbox[S]) UpdateFromEvent(state S, event hypp.Event) hypp.Dispatchable {
-	checked := event.EscapeToValue().Get("target").Get("checked").Bool()
+func (c Checkbox[S]) UpdateFromEvent(state S, event window.Event) hypp.Dispatchable {
+	checked := event.Value.Get("target").Get("checked").Bool()
 	return c.update(state, checked)
 }
 func (c Checkbox[S]) UpdateFromMessage(
@@ -227,7 +228,7 @@ func (n NumberInput[S, N]) Render(
 	inputProps := hypp.HProps{
 		"type":  "number",
 		"value": fmt.Sprint(n.value(state)),
-		"onchange": dispatch.ChangeControlAction[S](path, controlIndex, func(event hypp.Event) N {
+		"onchange": dispatch.ChangeControlAction[S](path, controlIndex, func(event window.Event) N {
 			return n.parseNumber([]byte(event.Target().Value()))
 		}),
 	}
@@ -256,7 +257,7 @@ func (n NumberInput[S, N]) keepInRange(number N) N {
 
 func (n NumberInput[S, N]) UpdateFromEvent(
 	state S,
-	event hypp.Event,
+	event window.Event,
 ) hypp.Dispatchable {
 	number := n.parseNumber([]byte(event.Target().Value()))
 	number = n.keepInRange(number)
@@ -308,7 +309,7 @@ func (t TextInput[S]) Render(state S, path []int, controlIndex int) *hypp.VNode 
 	inputProps := hypp.HProps{
 		"type":  "text",
 		"value": t.value(state),
-		"oninput": dispatch.ChangeControlAction[S](path, controlIndex, func(event hypp.Event) string {
+		"oninput": dispatch.ChangeControlAction[S](path, controlIndex, func(event window.Event) string {
 			return event.Target().Value()
 		}),
 	}
@@ -325,7 +326,7 @@ func (t TextInput[S]) Render(state S, path []int, controlIndex int) *hypp.VNode 
 	)
 }
 
-func (t TextInput[S]) UpdateFromEvent(state S, event hypp.Event) hypp.Dispatchable {
+func (t TextInput[S]) UpdateFromEvent(state S, event window.Event) hypp.Dispatchable {
 	text := event.Target().Value()
 	return t.update(state, text)
 }
@@ -373,7 +374,7 @@ func (c Button[S]) Render(
 			"onclick": dispatch.ChangeControlAction[S](
 				path,
 				controlIndex,
-				func(_ hypp.Event) struct{} {
+				func(_ window.Event) struct{} {
 					return struct{}{}
 				},
 			),
@@ -382,7 +383,7 @@ func (c Button[S]) Render(
 	)
 }
 
-func (c Button[S]) UpdateFromEvent(state S, _ hypp.Event) hypp.Dispatchable {
+func (c Button[S]) UpdateFromEvent(state S, _ window.Event) hypp.Dispatchable {
 	return c.update(state)
 }
 
@@ -424,7 +425,7 @@ func (t *Textarea[S]) WithColumns(columns int) *Textarea[S] {
 
 func (t Textarea[S]) Render(state S, path []int, controlIndex int) *hypp.VNode {
 	hProps := hypp.HProps{
-		"oninput": dispatch.ChangeControlAction[S](path, controlIndex, func(event hypp.Event) string {
+		"oninput": dispatch.ChangeControlAction[S](path, controlIndex, func(event window.Event) string {
 			return event.Target().Value()
 		}),
 	}
@@ -441,7 +442,7 @@ func (t Textarea[S]) Render(state S, path []int, controlIndex int) *hypp.VNode {
 	)
 }
 
-func (t Textarea[S]) UpdateFromEvent(state S, event hypp.Event) hypp.Dispatchable {
+func (t Textarea[S]) UpdateFromEvent(state S, event window.Event) hypp.Dispatchable {
 	text := event.Target().Value()
 	return t.update(state, text)
 }

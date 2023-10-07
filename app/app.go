@@ -2,13 +2,13 @@ package app
 
 import (
 	"net/url"
-	"syscall/js"
 
 	"github.com/macabot/fairytale"
 	"github.com/macabot/fairytale/internal/component"
 	"github.com/macabot/fairytale/internal/dispatch"
 	"github.com/macabot/hypp"
-	jsd "github.com/macabot/hypp/driver/js"
+	"github.com/macabot/hypp/js"
+	"github.com/macabot/hypp/window"
 )
 
 type Options struct {
@@ -58,15 +58,14 @@ func getHref(window js.Value) *url.URL {
 }
 
 func runAdmin[S hypp.State](s *fairytale.State[S]) {
-	el := js.Global().Get("document").Call("getElementById", "app")
+	el := window.Document().GetElementById("app")
 	if el.IsNull() {
 		panic("Could not find element with id 'app'.")
 	}
 	hypp.App(hypp.AppProps[*fairytale.State[S]]{
-		Driver: jsd.Driver{},
-		Init:   s,
-		View:   component.AdminPage[S],
-		Node:   jsd.Node(el),
+		Init: s,
+		View: component.AdminPage[S],
+		Node: el,
 		Subscriptions: func(_ *fairytale.State[S]) []hypp.Subscription {
 			return []hypp.Subscription{
 				dispatch.TaleEventSubscription[S](),
@@ -80,15 +79,14 @@ func runAdmin[S hypp.State](s *fairytale.State[S]) {
 }
 
 func runApp[S hypp.State](s *fairytale.State[S]) {
-	el := js.Global().Get("document").Call("querySelector", "html")
+	el := window.Document().QuerySelector("html")
 	if el.IsNull() {
 		panic("Could not find <html> element.")
 	}
 	hypp.App(hypp.AppProps[*fairytale.State[S]]{
-		Driver: jsd.Driver{},
-		Init:   s,
-		View:   component.AppPage[S],
-		Node:   jsd.Node(el),
+		Init: s,
+		View: component.AppPage[S],
+		Node: el,
 		Subscriptions: func(s *fairytale.State[S]) []hypp.Subscription {
 			subscriptions := []hypp.Subscription{
 				dispatch.SelectTaleSubscription[S](),

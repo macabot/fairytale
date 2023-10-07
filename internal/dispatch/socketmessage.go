@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/macabot/fairytale/internal/driver"
 	"github.com/macabot/fairytale/internal/model"
 	"github.com/macabot/hypp"
+	"github.com/macabot/hypp/js"
 )
 
 func SocketMessageSubscription() hypp.Subscription {
@@ -17,8 +17,7 @@ func SocketMessageSubscription() hypp.Subscription {
 }
 
 func subscribeToSocketMessage(dispatch hypp.Dispatch, _ hypp.Payload) hypp.Unsubscribe {
-	window := driver.Window.EscapeToValue()
-	href := window.Get("location").Get("href").String()
+	href := js.Global().Get("location").Get("href").String()
 	u, err := url.Parse(href)
 	if err != nil {
 		panic(fmt.Errorf("fairytale: cannot parse href '%s' as url", href))
@@ -34,20 +33,20 @@ func subscribeToSocketMessage(dispatch hypp.Dispatch, _ hypp.Payload) hypp.Unsub
 	u.Path = "/ws"
 	u.Fragment = ""
 	u.RawQuery = ""
-	socket := window.Get("WebSocket").New(u.String())
+	socket := js.Global().Get("WebSocket").New(u.String())
 
-	closeListener := driver.JavaScript.FuncOf(func(_ hypp.Value, _ []hypp.Value) any {
+	closeListener := js.FuncOf(func(_ js.Value, _ []js.Value) any {
 		fmt.Println("[WebSocket] Received close event.")
 		return nil
 	})
 
-	errorListener := driver.JavaScript.FuncOf(func(_ hypp.Value, args []hypp.Value) any {
+	errorListener := js.FuncOf(func(_ js.Value, args []js.Value) any {
 		event := args[0]
 		fmt.Printf("[WebSocket] Received error event '%v'", event)
 		return nil
 	})
 
-	messageListener := driver.JavaScript.FuncOf(func(_ hypp.Value, args []hypp.Value) any {
+	messageListener := js.FuncOf(func(_ js.Value, args []js.Value) any {
 		event := args[0]
 		data := event.Get("data").String()
 		fmt.Printf("[WebSocket] Received message event with data '%s'.\n", data)
@@ -64,7 +63,7 @@ func subscribeToSocketMessage(dispatch hypp.Dispatch, _ hypp.Payload) hypp.Unsub
 		return nil
 	})
 
-	openListener := driver.JavaScript.FuncOf(func(_ hypp.Value, _ []hypp.Value) any {
+	openListener := js.FuncOf(func(_ js.Value, _ []js.Value) any {
 		fmt.Println("[WebSocket] Receive open event.")
 		return nil
 	})
@@ -83,5 +82,5 @@ func subscribeToSocketMessage(dispatch hypp.Dispatch, _ hypp.Payload) hypp.Unsub
 }
 
 func reloadPage() {
-	driver.Window.EscapeToValue().Get("location").Call("reload")
+	js.Global().Get("location").Call("reload")
 }

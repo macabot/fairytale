@@ -6,6 +6,7 @@ import (
 
 	"github.com/gosimple/slug"
 	"github.com/macabot/hypp"
+	"github.com/macabot/hypp/window"
 )
 
 type TaleTarget int
@@ -26,7 +27,7 @@ var _ Node[hypp.EmptyState] = &Tale[hypp.EmptyState]{}
 // property of the state, however a Control can change the whole state.
 type Control[S hypp.State] interface {
 	Render(state S, talePath []int, controlIndex int) *hypp.VNode
-	UpdateFromEvent(state S, event hypp.Event) hypp.Dispatchable
+	UpdateFromEvent(state S, event window.Event) hypp.Dispatchable
 	UpdateFromMessage(state S, data json.RawMessage) hypp.Dispatchable
 }
 

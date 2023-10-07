@@ -2,17 +2,17 @@ package dispatch
 
 import (
 	"net/url"
-	"syscall/js"
 
 	"github.com/macabot/fairytale"
-	"github.com/macabot/fairytale/internal/driver"
 	"github.com/macabot/hypp"
+	"github.com/macabot/hypp/js"
+	"github.com/macabot/hypp/window"
 )
 
 func HashChangeSubscription[S hypp.State]() hypp.Subscription {
 	return hypp.Subscription{
 		Subscriber: func(dispatch hypp.Dispatch, _ hypp.Payload) hypp.Unsubscribe {
-			listener := func(_ hypp.Event) {
+			listener := func(_ window.Event) {
 				location := js.Global().Get("location").Call("toString").String()
 				u, err := url.Parse(location)
 				if err != nil {
@@ -20,9 +20,9 @@ func HashChangeSubscription[S hypp.State]() hypp.Subscription {
 				}
 				dispatch(updateCurrentFromLocationAction[S](u), nil)
 			}
-			id := driver.Window.AddEventListener("hashchange", listener)
+			id := window.AddEventListener("hashchange", listener)
 			return func() {
-				driver.Window.RemoveEventListener("hashchange", id)
+				window.RemoveEventListener("hashchange", id)
 			}
 		},
 	}
