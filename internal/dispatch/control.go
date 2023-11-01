@@ -6,6 +6,7 @@ import (
 
 	"github.com/macabot/fairytale"
 	"github.com/macabot/hypp"
+	"github.com/macabot/hypp/window"
 )
 
 type operateControlData[T any] struct {
@@ -17,11 +18,11 @@ type operateControlData[T any] struct {
 func ChangeControlAction[S hypp.State, T any](
 	talePath []int,
 	controlIndex int,
-	getEventData func(hypp.Event) T,
+	getEventData func(window.Event) T,
 ) hypp.Action[*fairytale.State[S]] {
 	return func(s *fairytale.State[S], payload hypp.Payload) hypp.Dispatchable {
 		newState := s.Clone()
-		event := payload.(hypp.Event)
+		event := payload.(window.Event)
 		tale := newState.GetTale(talePath)
 		control := tale.Controls()[controlIndex]
 		eventData := getEventData(event)

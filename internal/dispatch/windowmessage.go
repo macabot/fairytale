@@ -3,10 +3,10 @@ package dispatch
 import (
 	"encoding/json"
 	"fmt"
-	"syscall/js"
 
-	"github.com/macabot/fairytale/internal/driver"
 	"github.com/macabot/hypp"
+	"github.com/macabot/hypp/js"
+	"github.com/macabot/hypp/window"
 )
 
 type windowMessageProps struct {
@@ -16,8 +16,8 @@ type windowMessageProps struct {
 
 func subscribeToWindowMessage(dispatch hypp.Dispatch, payload hypp.Payload) hypp.Unsubscribe {
 	props := payload.(windowMessageProps)
-	listener := func(event hypp.Event) {
-		data := event.EscapeToValue().Get("data").String()
+	listener := func(event window.Event) {
+		data := event.Value.Get("data").String()
 		var m windowMessage[json.RawMessage]
 		if err := json.Unmarshal([]byte(data), &m); err != nil {
 			panic(fmt.Errorf("fairytale: cannot unmarshal message with data: %s", data))
@@ -26,9 +26,9 @@ func subscribeToWindowMessage(dispatch hypp.Dispatch, payload hypp.Payload) hypp
 			dispatch(props.Dispatchable, m.Data)
 		}
 	}
-	id := driver.Window.AddEventListener("message", listener)
+	id := window.AddEventListener("message", listener)
 	return func() {
-		driver.Window.RemoveEventListener("message", id)
+		window.RemoveEventListener("message", id)
 	}
 }
 
