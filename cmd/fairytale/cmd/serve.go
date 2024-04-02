@@ -273,9 +273,9 @@ var serveCmd = &cobra.Command{
 		if userAssetsDir != "" {
 			if _, err := os.Stat(userAssetsDir); err != nil {
 				if errors.Is(err, os.ErrNotExist) {
-					cobra.CheckErr(fmt.Errorf("Assets directory '%s' does not exist."))
+					cobra.CheckErr(fmt.Errorf("assets directory '%s' does not exist", userAssetsDir))
 				} else {
-					cobra.CheckErr(fmt.Errorf("Could not check if assets directory '%s' exist. %w", err))
+					cobra.CheckErr(fmt.Errorf("could not check if assets directory '%s' exist: %w", userAssetsDir, err))
 				}
 			}
 		}
