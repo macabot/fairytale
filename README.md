@@ -23,7 +23,6 @@ flowchart TD
 subgraph internal
     dispatch
     component
-    console
     driver
 end
 
@@ -40,6 +39,4 @@ component --> fairytale
 
 control --> fairytale
 control --> dispatch
-
-fairytale --> console
 ```

@@ -4,8 +4,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/macabot/fairytale/internal/console"
 	"github.com/macabot/hypp"
+	"github.com/macabot/hypp/window"
 )
 
 type AdminSettings struct {
@@ -119,7 +119,7 @@ func (s *State[S]) UpdateCurrentFromURL(u *url.URL) {
 		}
 	}
 	if !found {
-		console.Warn("Could not find tale for 'path' in URL fragment.")
+		window.Console().Warn("Could not find tale for 'path' in URL fragment.")
 	} else {
 		s.current = current
 		node := s.tree
