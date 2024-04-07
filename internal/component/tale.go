@@ -24,7 +24,7 @@ func replaceEventHandlers[S hypp.State](
 	if vNode == nil {
 		return vNode
 	}
-	if vNode.Kind() != hypp.SSRNode {
+	if vNode.Kind() != hypp.ElementNode {
 		return vNode
 	}
 	props := vNode.Props()
