@@ -15,7 +15,7 @@ type Node[S hypp.State] interface {
 	SetIsOpen(bool)
 }
 
-var _ Node[hypp.EmptyState] = &Bundle[hypp.EmptyState]{}
+var _ Node[struct{}] = &Bundle[struct{}]{}
 
 // Bundle forms a bundle of Nodes.
 type Bundle[S hypp.State] struct {

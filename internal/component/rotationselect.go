@@ -23,7 +23,7 @@ func OrientationSelect[S hypp.State](selectedOrientation fairytale.Orientation) 
 		hypp.Text("Orientation"),
 		html.Select(
 			hypp.HProps{
-				"onchange": dispatch.SelectOrientationAction[S](),
+				"onchange": dispatch.SelectOrientation[S],
 			},
 			options...,
 		),

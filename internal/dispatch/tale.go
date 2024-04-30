@@ -13,24 +13,22 @@ func TaleEventSubscription[S hypp.State]() hypp.Subscription {
 		Subscriber: subscribeToWindowMessage,
 		Payload: windowMessageProps{
 			Type:         windowMessageTaleEvent,
-			Dispatchable: appendTaleEventAction[S](),
+			Dispatchable: appendTaleEvent[S],
 		},
 	}
 }
 
-func appendTaleEventAction[S hypp.State]() hypp.Action[*fairytale.State[S]] {
-	return func(s *fairytale.State[S], payload hypp.Payload) hypp.Dispatchable {
-		raw := payload.(json.RawMessage)
-		var event fairytale.TaleEvent[S]
-		if err := json.Unmarshal(raw, &event); err != nil {
-			panic(fmt.Errorf("fairytale: cannot unmarshal appendTaleEvent data '%s': %w", string(raw), err))
-		}
-
-		newState := s.Clone()
-		tale := newState.GetTale(event.Path)
-		tale.SetState(event.State)
-		return newState
+func appendTaleEvent[S hypp.State](s *fairytale.State[S], payload hypp.Payload) hypp.Dispatchable {
+	raw := payload.(json.RawMessage)
+	var event fairytale.TaleEvent[S]
+	if err := json.Unmarshal(raw, &event); err != nil {
+		panic(fmt.Errorf("fairytale: cannot unmarshal appendTaleEvent data '%s': %w", string(raw), err))
 	}
+
+	newState := s.Clone()
+	tale := newState.GetTale(event.Path)
+	tale.SetState(event.State)
+	return newState
 }
 
 func TaleStateSubscription[S hypp.State](tale *fairytale.Tale[S], path []int) hypp.Subscription {
@@ -55,7 +53,7 @@ func TaleStateSubscription[S hypp.State](tale *fairytale.Tale[S], path []int) hy
 	}
 }
 
-func taleDispatchAction[S hypp.State](
+func createTaleDispatchAction[S hypp.State](
 	tale *fairytale.Tale[S],
 	dispatchable hypp.Dispatchable,
 ) hypp.Action[*fairytale.State[S]] {
@@ -77,7 +75,7 @@ func TriggerTaleEvent[S hypp.State](
 		return value
 	}
 
-	return taleDispatchAction(tale, dispatchable)
+	return createTaleDispatchAction(tale, dispatchable)
 }
 
 func equalPaths(a, b []int) bool {
@@ -97,23 +95,21 @@ func SelectTaleSubscription[S hypp.State]() hypp.Subscription {
 		Subscriber: subscribeToWindowMessage,
 		Payload: windowMessageProps{
 			Type:         windowMessageSelectTale,
-			Dispatchable: selectTaleAction[S](),
+			Dispatchable: selectTale[S],
 		},
 	}
 }
 
-func selectTaleAction[S hypp.State]() hypp.Action[*fairytale.State[S]] {
-	return func(s *fairytale.State[S], payload hypp.Payload) hypp.Dispatchable {
-		raw := payload.(json.RawMessage)
-		var path []int
-		if err := json.Unmarshal(raw, &path); err != nil {
-			panic(fmt.Errorf("fairytale: cannot unmarshal selectTale data '%s': %w", string(raw), err))
-		}
-		if equalPaths(path, s.Current()) {
-			return s
-		}
-		newState := s.Clone()
-		newState.SetCurrent(path)
-		return newState
+func selectTale[S hypp.State](s *fairytale.State[S], payload hypp.Payload) hypp.Dispatchable {
+	raw := payload.(json.RawMessage)
+	var path []int
+	if err := json.Unmarshal(raw, &path); err != nil {
+		panic(fmt.Errorf("fairytale: cannot unmarshal selectTale data '%s': %w", string(raw), err))
 	}
+	if equalPaths(path, s.Current()) {
+		return s
+	}
+	newState := s.Clone()
+	newState.SetCurrent(path)
+	return newState
 }

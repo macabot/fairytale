@@ -36,7 +36,7 @@ func (s SelectOption[T]) Render(selected bool) *hypp.VNode {
 	)
 }
 
-var _ fairytale.Control[hypp.EmptyState] = &Select[hypp.EmptyState, struct{}]{}
+var _ fairytale.Control[struct{}] = &Select[struct{}, struct{}]{}
 
 // Select is a Control that lets you update the state by selecting one
 // of the available options.
@@ -91,9 +91,13 @@ func (s Select[S, T]) Render(
 		hypp.Text(s.label),
 		html.Select(
 			hypp.HProps{
-				"onchange": dispatch.ChangeControlAction[S](talePath, controlIndex, func(event window.Event) json.RawMessage {
-					return []byte(event.Target().Value())
-				}),
+				"onchange": dispatch.CreateChangeControlAction[S](
+					talePath,
+					controlIndex,
+					func(event window.Event) json.RawMessage {
+						return []byte(event.Target().Value())
+					},
+				),
 			},
 			options...,
 		),
@@ -118,7 +122,7 @@ func (s Select[S, T]) UpdateFromMessage(
 	return s.update(state, t)
 }
 
-var _ fairytale.Control[hypp.EmptyState] = &Checkbox[hypp.EmptyState]{}
+var _ fairytale.Control[struct{}] = &Checkbox[struct{}]{}
 
 // Checkbox is a Control that lets you update the state by toggling a
 // checkbox.
@@ -154,9 +158,13 @@ func (c Checkbox[S]) Render(
 			hypp.HProps{
 				"type":    "checkbox",
 				"checked": c.checked(state),
-				"onchange": dispatch.ChangeControlAction[S](path, controlIndex, func(event window.Event) bool {
-					return event.Value.Get("target").Get("checked").Bool()
-				}),
+				"onchange": dispatch.CreateChangeControlAction[S](
+					path,
+					controlIndex,
+					func(event window.Event) bool {
+						return event.Value.Get("target").Get("checked").Bool()
+					},
+				),
 			},
 		),
 	)
@@ -176,7 +184,7 @@ func (c Checkbox[S]) UpdateFromMessage(
 	return c.update(state, checked)
 }
 
-var _ fairytale.Control[hypp.EmptyState] = &NumberInput[hypp.EmptyState, float64]{}
+var _ fairytale.Control[struct{}] = &NumberInput[struct{}, float64]{}
 
 type Number interface {
 	constraints.Integer | constraints.Float
@@ -228,9 +236,13 @@ func (n NumberInput[S, N]) Render(
 	inputProps := hypp.HProps{
 		"type":  "number",
 		"value": fmt.Sprint(n.value(state)),
-		"onchange": dispatch.ChangeControlAction[S](path, controlIndex, func(event window.Event) N {
-			return n.parseNumber([]byte(event.Target().Value()))
-		}),
+		"onchange": dispatch.CreateChangeControlAction[S](
+			path,
+			controlIndex,
+			func(event window.Event) N {
+				return n.parseNumber([]byte(event.Target().Value()))
+			},
+		),
 	}
 	if n.min != nil {
 		inputProps["min"] = fmt.Sprint(*n.min)
@@ -273,7 +285,7 @@ func (n NumberInput[S, N]) UpdateFromMessage(
 	return n.update(state, number)
 }
 
-var _ fairytale.Control[hypp.EmptyState] = &TextInput[hypp.EmptyState]{}
+var _ fairytale.Control[struct{}] = &TextInput[struct{}]{}
 
 type TextInput[S hypp.State] struct {
 	label     string
@@ -309,9 +321,13 @@ func (t TextInput[S]) Render(state S, path []int, controlIndex int) *hypp.VNode 
 	inputProps := hypp.HProps{
 		"type":  "text",
 		"value": t.value(state),
-		"oninput": dispatch.ChangeControlAction[S](path, controlIndex, func(event window.Event) string {
-			return event.Target().Value()
-		}),
+		"oninput": dispatch.CreateChangeControlAction[S](
+			path,
+			controlIndex,
+			func(event window.Event) string {
+				return event.Target().Value()
+			},
+		),
 	}
 	if t.minLength != nil {
 		inputProps["minlength"] = strconv.Itoa(*t.minLength)
@@ -342,7 +358,7 @@ func (t TextInput[S]) UpdateFromMessage(
 	return t.update(state, text)
 }
 
-var _ fairytale.Control[hypp.EmptyState] = &Button[hypp.EmptyState]{}
+var _ fairytale.Control[struct{}] = &Button[struct{}]{}
 
 // Button is a Control that lets you update the state by clicking a
 // button.
@@ -371,7 +387,7 @@ func (c Button[S]) Render(
 	return html.Button(
 		hypp.HProps{
 			"type": "button",
-			"onclick": dispatch.ChangeControlAction[S](
+			"onclick": dispatch.CreateChangeControlAction[S](
 				path,
 				controlIndex,
 				func(_ window.Event) struct{} {
@@ -391,7 +407,7 @@ func (c Button[S]) UpdateFromMessage(state S, _ json.RawMessage) hypp.Dispatchab
 	return c.update(state)
 }
 
-var _ fairytale.Control[hypp.EmptyState] = &Textarea[hypp.EmptyState]{}
+var _ fairytale.Control[struct{}] = &Textarea[struct{}]{}
 
 type Textarea[S hypp.State] struct {
 	label   string
@@ -425,9 +441,13 @@ func (t *Textarea[S]) WithColumns(columns int) *Textarea[S] {
 
 func (t Textarea[S]) Render(state S, path []int, controlIndex int) *hypp.VNode {
 	hProps := hypp.HProps{
-		"oninput": dispatch.ChangeControlAction[S](path, controlIndex, func(event window.Event) string {
-			return event.Target().Value()
-		}),
+		"oninput": dispatch.CreateChangeControlAction[S](
+			path,
+			controlIndex,
+			func(event window.Event) string {
+				return event.Target().Value()
+			},
+		),
 	}
 	if t.rows != nil {
 		hProps["rows"] = *t.rows

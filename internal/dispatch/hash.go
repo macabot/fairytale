@@ -18,7 +18,7 @@ func HashChangeSubscription[S hypp.State]() hypp.Subscription {
 				if err != nil {
 					panic(err)
 				}
-				dispatch(updateCurrentFromLocationAction[S](u), nil)
+				dispatch(updateCurrentFromLocation[S], u)
 			}
 			id := window.AddEventListener("hashchange", listener)
 			return func() {
@@ -28,14 +28,13 @@ func HashChangeSubscription[S hypp.State]() hypp.Subscription {
 	}
 }
 
-func updateCurrentFromLocationAction[S hypp.State](u *url.URL) hypp.Action[*fairytale.State[S]] {
-	return func(s *fairytale.State[S], _ hypp.Payload) hypp.Dispatchable {
-		newState := s.Clone()
-		newState.UpdateCurrentFromURL(u)
-		postWindowMessageToIFrame(windowMessage[[]int]{
-			Type: windowMessageSelectTale,
-			Data: newState.Current(),
-		})
-		return newState
-	}
+func updateCurrentFromLocation[S hypp.State](s *fairytale.State[S], payload hypp.Payload) hypp.Dispatchable {
+	u := payload.(*url.URL)
+	newState := s.Clone()
+	newState.UpdateCurrentFromURL(u)
+	postWindowMessageToIFrame(windowMessage[[]int]{
+		Type: windowMessageSelectTale,
+		Data: newState.Current(),
+	})
+	return newState
 }
