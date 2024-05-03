@@ -1,6 +1,7 @@
 package component
 
 import (
+	"github.com/macabot/fairytale"
 	"github.com/macabot/fairytale/internal/dispatch"
 	"github.com/macabot/hypp"
 	"github.com/macabot/hypp/tag/html"
@@ -24,7 +25,10 @@ func PanelTab[S hypp.State](i int, name string, selected bool) *hypp.VNode {
 				"panel-tab": true,
 				"selected":  selected,
 			},
-			"onclick": dispatch.SelectPanelTabAction[S](i),
+			"onclick": hypp.ActionAndPayload[*fairytale.State[S]]{
+				Action:  dispatch.SelectPanelTab[S],
+				Payload: i,
+			},
 		},
 		hypp.Text(name),
 	)

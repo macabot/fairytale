@@ -10,13 +10,11 @@ func RefreshAppSubscription[S hypp.State]() hypp.Subscription {
 		Subscriber: subscribeToWindowMessage,
 		Payload: windowMessageProps{
 			Type:         windowMessageRefreshApp,
-			Dispatchable: refreshAppAction[S](),
+			Dispatchable: refreshApp[S],
 		},
 	}
 }
 
-func refreshAppAction[S hypp.State]() hypp.Action[*fairytale.State[S]] {
-	return func(s *fairytale.State[S], _ hypp.Payload) hypp.Dispatchable {
-		return s.Clone()
-	}
+func refreshApp[S hypp.State](s *fairytale.State[S], _ hypp.Payload) hypp.Dispatchable {
+	return s.Clone()
 }

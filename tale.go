@@ -21,7 +21,7 @@ type TaleSettings struct {
 	Target TaleTarget
 }
 
-var _ Node[hypp.EmptyState] = &Tale[hypp.EmptyState]{}
+var _ Node[struct{}] = &Tale[struct{}]{}
 
 // Control manages the state of a Tale. Typically, a Control manages a single
 // property of the state, however a Control can change the whole state.
@@ -66,12 +66,14 @@ func New[S hypp.State](
 			}
 		case hypp.Action[S]:
 			dispatch(v(tale.state, payload), nil)
+		case func(S, hypp.Payload) hypp.Dispatchable:
+			dispatch(v(tale.state, payload), nil)
 		case hypp.ActionAndPayload[S]:
 			dispatch(v.Action, v.Payload)
 		case S:
 			tale.SetState(v)
 		default:
-			panic(fmt.Errorf("fairytale: dispatchable has unexpected type '%[1]T'. Expected type 'StateAndEffects[%[2]T]', 'Action[%[2]T]', 'ActionAndPayload[%[2]T]' or '%[2]T'", dispatchable, tale.state))
+			panic(fmt.Errorf("fairytale: dispatchable has unexpected type '%[1]T'. Expected type 'StateAndEffects[%[2]T]', 'Action[%[2]T]', 'func(%[2]T, Payload) Dispatchable', 'ActionAndPayload[%[2]T]' or '%[2]T'", dispatchable, tale.state))
 		}
 	}
 	tale = &Tale[S]{

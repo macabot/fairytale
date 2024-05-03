@@ -14,7 +14,6 @@ type AdminSettings struct {
 }
 
 type State[S hypp.State] struct {
-	hypp.EmptyState
 	tree             Node[S]
 	current          []int
 	settings         AdminSettings
