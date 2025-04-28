@@ -162,10 +162,13 @@ func findFairytaleAssetsDir(cmd *cobra.Command) string {
 }
 
 func findWasmExecJsPath() string {
+	if path := os.Getenv("WASM_EXEC_JS_PATH"); path != "" {
+		return path
+	}
 	out, err := exec.Command("go", "env", "GOROOT").Output()
 	cobra.CheckErr(err)
 	goRoot := strings.TrimSuffix(string(out), "\n")
-	return filepath.Join(goRoot, "misc", "wasm", "wasm_exec.js")
+	return filepath.Join(goRoot, "lib", "wasm", "wasm_exec.js")
 }
 
 func runWatcher(stop chan struct{}, hub *Hub, paths []string) {
@@ -261,9 +264,11 @@ var (
 
 // serveCmd represents the serve command
 var serveCmd = &cobra.Command{
-	Use:     "serve address main.wasm",
-	Short:   "Serve the fairytale application",
-	Long:    `Serve the fairytale application during development of your applications. The fairytale app will be served on the given address.`,
+	Use:   "serve address main.wasm",
+	Short: "Serve the fairytale application",
+	Long: `Serve the fairytale application during development of your applications. The fairytale app will be served on the given address.
+
+Use the WASM_EXEC_JS_PATH environment variable to override the path to the wasm_exec.js file.`,
 	Example: "fairytale serve :8080 path/to/main.wasm",
 	Args:    cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
