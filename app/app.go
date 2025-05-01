@@ -1,0 +1,106 @@
+package app
+
+import (
+	"net/url"
+
+	"github.com/macabot/fairytale"
+	"github.com/macabot/fairytale/internal/component"
+	"github.com/macabot/fairytale/internal/dispatch"
+	"github.com/macabot/hypp"
+	"github.com/macabot/hypp/js"
+	"github.com/macabot/hypp/window"
+)
+
+type Options struct {
+	Assets   []*hypp.VNode
+	Settings fairytale.AdminSettings
+}
+
+// Run fairytale.
+func Run[S hypp.State](options *Options, nodes ...fairytale.Node[S]) {
+	wrap := false
+	for _, node := range nodes {
+		if node.Tale() != nil {
+			wrap = true
+			break
+		}
+	}
+	if wrap {
+		wrapper := fairytale.NewBundle("Fairy Tales", nodes...)
+		nodes = []fairytale.Node[S]{wrapper}
+	}
+
+	tree := fairytale.NewBundle("", nodes...)
+	tree.SetIsOpen(true)
+	s := fairytale.NewState[S](tree)
+	if options != nil {
+		s.SetAssets(options.Assets)
+		s.SetSettings(options.Settings)
+	}
+
+	top := js.Global().Get("top")
+	inTopFrame := js.Global().Get("self").Equal(top)
+	href := getHref(top)
+	s.UpdateCurrentFromURL(href)
+	if inTopFrame {
+		runAdmin(s)
+	} else {
+		runApp(s)
+	}
+}
+
+func getHref(window js.Value) *url.URL {
+	href, err := url.Parse(window.Get("location").Get("href").String())
+	if err != nil {
+		panic("Could not parse window.location.href as URL.")
+	}
+	return href
+}
+
+func runAdmin[S hypp.State](s *fairytale.State[S]) {
+	el := window.Document().GetElementById("app")
+	if el.IsNull() {
+		panic("Could not find element with id 'app'.")
+	}
+	hypp.App(hypp.AppProps[*fairytale.State[S]]{
+		Init: s,
+		View: component.AdminPage[S],
+		Node: el,
+		Subscriptions: func(_ *fairytale.State[S]) []hypp.Subscription {
+			return []hypp.Subscription{
+				dispatch.TaleEventSubscription[S](),
+				dispatch.HashChangeSubscription[S](),
+				dispatch.SocketMessageSubscription(),
+			}
+		},
+	})
+
+	select {} // run Go forever
+}
+
+func runApp[S hypp.State](s *fairytale.State[S]) {
+	el := window.Document().QuerySelector("html")
+	if el.IsNull() {
+		panic("Could not find <html> element.")
+	}
+	hypp.App(hypp.AppProps[*fairytale.State[S]]{
+		Init: s,
+		View: component.AppPage[S],
+		Node: el,
+		Subscriptions: func(s *fairytale.State[S]) []hypp.Subscription {
+			subscriptions := []hypp.Subscription{
+				dispatch.SelectTaleSubscription[S](),
+				dispatch.OperateControlSubscription[S](),
+				dispatch.RefreshAppSubscription[S](),
+			}
+			talePaths := s.TalePaths()
+			for _, path := range talePaths {
+				tale := s.GetTale(path)
+				subscriptions = append(subscriptions, dispatch.TaleStateSubscription(tale, path))
+			}
+			return subscriptions
+		},
+	})
+
+	select {} // run Go forever
+}
